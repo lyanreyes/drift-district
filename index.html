@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Drift District — free online racing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700;1,900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#15151e;--bar:#0b0b10;--card:#1f1f2b;--line:rgba(255,255,255,.12);--txt:#fff;--dim:#a5a8b8;--red:#e10600;--cy:#35e0ff;--ye:#ffd23f;--panel:rgba(14,14,20,.86)}
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:"Titillium Web","Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
+  canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+  button,select,input{font:inherit;color:inherit}
+  button{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.08);border-radius:8px;padding:10px 16px;font-weight:700}
+  button:hover{background:rgba(255,255,255,.17)}
+  button.pri{background:var(--red);border-color:var(--red)}
+  button.pri:hover{background:#ff1e14}
+  select,input[type=text],input:not([type]){background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:8px;padding:10px 12px;user-select:text;-webkit-user-select:text}
+  select option{background:#151829}
+
+  /* ── website-style menu ── */
+  #menu{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;touch-action:pan-y}
+  #menu>*{position:relative;z-index:1}
+  #menu>header,#menu>.sub{z-index:2}
+  .wrap>*{position:relative;z-index:1}
+  .wrap>.grid{z-index:0}
+  .grid>*{position:relative;z-index:1}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+  header.top{background:var(--bar);border-bottom:1px solid var(--line);background-image:repeating-linear-gradient(115deg,transparent 0 46px,rgba(255,255,255,.035) 46px 60px)}
+  header.top .wrap{display:flex;align-items:center;gap:34px;height:62px}
+  .logo{display:flex;align-items:center;gap:10px;font-style:italic;font-weight:900;font-size:22px;letter-spacing:1px;white-space:nowrap}
+  .logo i{display:block;width:44px;height:22px;background:linear-gradient(105deg,var(--red) 0 38%,transparent 38% 46%,var(--red) 46% 72%,transparent 72% 80%,var(--red) 80%);transform:skewX(-24deg);border-radius:3px}
+  .logo span{color:var(--red)}
+  nav{display:flex;gap:30px;font-weight:600;font-size:17px;overflow:hidden}
+  nav a{color:#fff;text-decoration:none;white-space:nowrap}
+  nav a:hover{color:var(--red)}
+  .sub{background:#000;border-bottom:1px solid var(--line)}
+  .sub .wrap{display:flex;justify-content:space-between;align-items:center;height:56px;gap:16px}
+  .sub small{display:block;font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.5px}
+  .sub b{font-size:19px}
+  .sub .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);margin-right:8px}
+  .sub .times{font-size:12px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+  .sub .times span{color:var(--dim);margin-right:14px}
+  .pills{display:flex;gap:12px;flex-wrap:wrap;padding:22px 0}
+  .pill{border-radius:999px;background:#2a2a38;border:1px solid transparent;padding:7px 16px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;cursor:pointer}
+  .pill:hover{background:#383849}
+  .pill.on{background:#fff;color:#15151e}
+  .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:26px;align-items:stretch}
+  .hero{z-index:0!important;min-height:440px;border-radius:14px;box-shadow:0 0 0 300vmax var(--bg);display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;border:1px solid var(--line)}
+  .hero .in{padding:60px 24px 22px;background:linear-gradient(transparent,rgba(8,8,14,.93) 42%)}
+  .hero h1{margin:0 0 4px;font-size:clamp(26px,4.2vw,40px);line-height:1.1;font-weight:900;font-style:italic}
+  .hero h1 u{text-decoration-color:var(--red);text-underline-offset:5px}
+  .hero p{margin:0 0 14px;color:var(--dim)}
+  .form{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .form #name{flex:1;min-width:170px}
+  #code{width:92px;text-transform:uppercase;text-align:center;letter-spacing:3px;font-weight:700}
+  #status{min-height:22px;color:var(--ye);margin:10px 0 0;font-weight:600}
+  .cars{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:100%}
+  .car{border-radius:12px;padding:14px;cursor:pointer;background:var(--card);border:2px solid transparent;display:flex;flex-direction:column;justify-content:flex-end;min-height:150px;background-image:repeating-linear-gradient(115deg,transparent 0 30px,rgba(255,255,255,.03) 30px 40px)}
+  .car:hover{background-color:#292938}
+  .car.sel{border-color:var(--red)}
+  .car b{display:block;font-size:19px;line-height:1.2}
+  .car small{color:var(--dim)}
+  .car.sel b::after{content:"SELECTED";display:inline-block;margin-left:8px;background:var(--red);font-size:10px;padding:1px 6px;border-radius:3px;vertical-align:middle;letter-spacing:.5px}
+  .bars{margin-top:8px;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:11px;color:var(--dim);align-items:center}
+  .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--red)}
+  section{padding:34px 0 0}
+  section h2{margin:0 0 14px;font-size:24px;font-weight:900;font-style:italic;border-top:4px solid var(--red);border-right:4px solid var(--red);border-top-right-radius:14px;padding:10px 14px 0 0}
+  .teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  .team{background:var(--card);border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid transparent}
+  .team:hover{background:#292938}
+  .team.sel{border-color:#fff}
+  .team i{display:block;height:34px}
+  .team b{display:block;padding:8px 12px}
+  .custom{display:flex;align-items:center;gap:10px;margin-top:14px;color:var(--dim)}
+  input[type=color]{width:46px;height:36px;padding:0;border:1px solid var(--line);border-radius:8px;background:none}
+  table.rec{border-collapse:collapse;width:100%;max-width:620px;background:var(--card);border-radius:10px;overflow:hidden}
+  table.rec td,table.rec th{padding:11px 16px;text-align:left;border-bottom:1px solid var(--line)}
+  table.rec th{font-size:11px;color:var(--dim);letter-spacing:1px}
+  table.rec td:last-child{font-variant-numeric:tabular-nums;font-weight:700}
+  .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;color:var(--dim)}
+  .keys b{color:#fff;background:#2a2a38;border-radius:6px;padding:2px 8px;margin-right:8px}
+  .tips{color:var(--dim);max-width:760px;line-height:1.6}
+  footer{padding:36px 0 30px;color:var(--dim);font-size:13px}
+  @media (max-width:820px){.grid{grid-template-columns:1fr} nav{display:none} .hero{min-height:380px}}
+
+  /* ── in-game HUD ── */
+  #hud{position:fixed;inset:0;pointer-events:none}
+  #hud>*{position:absolute}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  #room{top:12px;left:12px;pointer-events:auto;display:flex;flex-direction:column;gap:8px;width:220px}
+  #room .code{font-size:13px;color:var(--dim);font-weight:700}
+  #room .code b{font-size:20px;color:var(--cy);letter-spacing:3px;margin-left:6px}
+  #room button,#room select{padding:6px 10px;font-size:14px;width:100%}
+  #board{top:12px;right:12px;min-width:190px;font-size:14px;padding:8px}
+  #board table{border-collapse:collapse}
+  #board th{color:var(--dim);font-size:10px;font-weight:700;text-align:left;padding:2px 7px;letter-spacing:.5px;text-transform:uppercase}
+  #board td{padding:3px 7px;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+  #board td:first-child{background:#fff;color:#111;font-weight:900;text-align:center;border-bottom:2px solid var(--panel)}
+  #board tr.me td:nth-child(2){background:var(--ye);color:#111}
+  #top{top:12px;left:50%;transform:translateX(-50%);display:flex;gap:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #top small{display:block;font-size:10px;color:var(--dim);letter-spacing:1px}
+  #msg{top:28%;left:50%;transform:translateX(-50%);font-size:clamp(48px,12vw,120px);font-weight:900;font-style:italic;text-shadow:0 0 30px rgba(225,6,0,.9),0 4px 0 #000;white-space:nowrap}
+  #toast{bottom:150px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;opacity:0;transition:opacity .3s;white-space:nowrap;font-weight:600}
+  #toast.on{opacity:1}
+  #results{top:50%;left:50%;transform:translate(-50%,-50%);min-width:280px;pointer-events:auto;text-align:center}
+  #results h2{margin:0 0 8px;font-style:italic}
+  #results .r{display:flex;justify-content:space-between;gap:20px;padding:4px 0;font-variant-numeric:tabular-nums}
+  #results button{margin-top:10px}
+  #drift{bottom:20px;left:50%;transform:translateX(-50%);text-align:center}
+  #drift b{font-size:30px;display:block;line-height:1;color:var(--ye);font-variant-numeric:tabular-nums}
+  #drift small{color:var(--dim);letter-spacing:3px;font-size:11px}
+  #combo{display:block;height:22px;color:var(--red);font-weight:900;font-size:18px}
+  #speedo{bottom:16px;right:16px;display:flex;align-items:center;gap:14px;padding:8px 14px 10px;border-radius:6px;transform:skewX(-8deg)}
+  #gear{font-size:54px;font-weight:900;line-height:1;min-width:34px;text-align:center}
+  #speedo b{font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+  #speedo small{margin-left:5px;font-weight:700}
+  #nitro{margin-top:6px;width:130px;height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
+  #nitro i{display:block;height:100%;width:100%;background:var(--cy)}
+  #carstat{bottom:104px;right:16px;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--dim);display:grid;grid-template-columns:auto 110px;gap:5px 10px;align-items:center;padding:8px 12px}
+  .mbar{height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
+  .mbar i{display:block;height:100%}
+  #tyreBar{background:#3dff7a;width:100%} #dmgBar{background:var(--red);width:0}
+  #map{bottom:16px;left:16px;border-radius:12px;border:1px solid var(--line);background:rgba(8,10,20,.7)}
+  #touch{inset:0;display:none}
+  #touch button{position:absolute;pointer-events:auto;width:68px;height:68px;border-radius:50%;font-size:22px;background:rgba(255,255,255,.14);padding:0}
+  @media (pointer:coarse){
+    #touch{display:block} #map{bottom:auto;top:190px;left:12px;width:110px;height:110px}
+    #speedo{bottom:auto;top:120px;right:12px} #gear{font-size:34px} #drift{bottom:auto;top:66px} #carstat{bottom:auto;top:190px}
+    #board{font-size:11px;min-width:0}
+  }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="menu">
+  <header class="top"><div class="wrap">
+    <div class="logo"><i></i>DRIFT&nbsp;<span>DISTRICT</span></div>
+    <nav><a href="#race">Race</a><a href="#garage">Garage</a><a href="#teams">Teams</a><a href="#records">Records</a><a href="#controls">Controls</a></nav>
+  </div></header>
+  <div class="sub"><div class="wrap">
+    <div><small>NEXT SESSION</small><b><span class="dot"></span><span id="roundName">Grand Prix Circuit</span> &rsaquo;</b></div>
+    <div class="times"><div><span>MY TIME</span><span id="clock" style="color:#fff;margin:0">--:--</span></div><div><span>LOBBY SIZE</span><span style="color:#fff;margin:0">up to 8</span></div></div>
+  </div></div>
+
+  <div class="wrap" id="race">
+    <div class="pills">
+      <span class="pill" data-mode="gp">Grand Prix</span>
+      <span class="pill" data-mode="city">Neon City street race</span>
+      <span class="pill" data-mode="drift">Drift Arena</span>
+      <a class="pill" href="#teams">Teams</a>
+      <a class="pill" href="#records">Records</a>
+      <a class="pill" href="#controls">New here?</a>
+    </div>
+    <div class="grid">
+      <div class="hero"><div class="in">
+        <h1><u>Lights out — race your friends online</u></h1>
+        <p>Enter a username, create a lobby, and send your friends the invite link.</p>
+        <div class="form">
+          <input id="name" maxlength="14" placeholder="Enter your username">
+          <button id="create" class="pri">Create lobby</button>
+          <button id="solo">Practice solo</button>
+        </div>
+        <div class="form" style="margin-top:10px">
+          <input id="code" maxlength="4" placeholder="CODE">
+          <button id="join">Join lobby</button>
+        </div>
+        <p id="status"></p>
+      </div></div>
+      <div id="garage"><div id="cars" class="cars"></div></div>
+    </div>
+
+    <section id="teams">
+      <h2>Teams</h2>
+      <div id="teamCards" class="teams"></div>
+      <div class="custom">Or custom paint <input type="color" id="color" value="#1d7cf2"></div>
+    </section>
+
+    <section id="records">
+      <h2>Your records</h2>
+      <table class="rec"><thead><tr><th>EVENT</th><th>PERSONAL BEST</th></tr></thead><tbody id="recBody"></tbody></table>
+    </section>
+
+    <section id="controls">
+      <h2>Controls</h2>
+      <div class="keys">
+        <div><b>W A S D</b>or arrows — drive</div><div><b>Space</b>handbrake / drift</div><div><b>Shift</b>nitro boost</div>
+        <div><b>C</b>cockpit / chase camera</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div>
+      </div>
+      <p class="tips"><b style="color:#fff">Pit stops:</b> on the Grand Prix circuit your tyres wear out and lose grip, and crashes damage the car and cost top speed. Drive into the pit lane on the inside of the main straight and stop in a yellow box for 2.5 seconds to get fresh tyres and repairs. A wrecked car is put back on track after a short delay.</p>
+    </section>
+    <footer>Drift District is a fan-made, non-commercial game for playing with friends. It is not affiliated with any racing series or team.</footer>
+  </div>
+  <select id="mode0" hidden><option value="gp">gp</option><option value="city">city</option><option value="drift">drift</option></select>
+  <select id="team" hidden><option value="">Custom paint</option></select>
+</div>
+
+<div id="hud" hidden>
+  <div id="room" class="box">
+    <div class="code" id="roomCode"></div>
+    <button id="copy">Copy invite link</button>
+    <select id="modeSel">
+      <option value="gp">Grand Prix circuit</option>
+      <option value="city">Neon City — street race</option>
+      <option value="drift">Drift arena</option>
+    </select>
+    <button id="startBtn" class="pri">Start race (Enter)</button>
+    <button id="camBtn">Switch camera (C)</button>
+    <button id="leave">Leave</button>
+  </div>
+  <div id="top" class="box">
+    <div><small id="lapL">LAP</small><span id="lap">1/2</span></div>
+    <div><small>POS</small><span id="pos">1/1</span></div>
+    <div><small>TIME</small><span id="time">0:00.000</span></div>
+    <div><small>BEST LAP</small><span id="best">--:--.---</span></div>
+  </div>
+  <div id="board" class="box"></div>
+  <div id="msg"></div>
+  <div id="toast"></div>
+  <div id="results" class="box" hidden></div>
+  <div id="drift"><span id="combo"></span><b id="score">0</b><small>DRIFT</small></div>
+  <div id="carstat" class="box"><span>TYRES</span><div class="mbar"><i id="tyreBar"></i></div><span>DAMAGE</span><div class="mbar"><i id="dmgBar"></i></div></div>
+  <div id="speedo" class="box"><span id="gear">N</span><div><b id="spd">0</b><small>KMH</small><div id="nitro"><i></i></div></div></div>
+  <canvas id="map" width="170" height="170"></canvas>
+  <div id="touch">
+    <button data-k="ArrowLeft" style="left:16px;bottom:24px">◀</button>
+    <button data-k="ArrowRight" style="left:96px;bottom:24px">▶</button>
+    <button data-k="ArrowUp" style="right:16px;bottom:100px">▲</button>
+    <button data-k="ArrowDown" style="right:16px;bottom:24px">▼</button>
+    <button data-k="Space" style="right:96px;bottom:24px;font-size:13px">DRIFT</button>
+    <button data-k="ShiftLeft" style="right:96px;bottom:100px;font-size:13px">N₂O</button>
+  </div>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
