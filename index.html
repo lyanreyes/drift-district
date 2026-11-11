@@ -151,7 +151,9 @@
 
   <div class="wrap" id="race">
     <div class="pills">
-      <span class="pill" data-mode="gp">Grand Prix</span>
+      <span class="pill" data-mode="gp">Alpine Ring</span>
+      <span class="pill" data-mode="gp2">São Paulo</span>
+      <span class="pill" data-mode="gp3">Monte Carlo</span>
       <span class="pill" data-mode="city">Neon City street race</span>
       <span class="pill" data-mode="drift">Drift Arena</span>
       <a class="pill" href="#teams">Teams</a>
@@ -193,11 +195,12 @@
         <div><b>W A S D</b>or arrows — drive</div><div><b>Space</b>handbrake / drift</div><div><b>Shift</b>nitro boost</div>
         <div><b>C</b>cockpit / chase camera</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div>
       </div>
-      <p class="tips"><b style="color:#fff">Pit stops:</b> on the Grand Prix circuit your tyres wear out and lose grip, and crashes damage the car and cost top speed. Drive into the pit lane on the inside of the main straight and stop in a yellow box for 2.5 seconds to get fresh tyres and repairs. A wrecked car is put back on track after a short delay.</p>
+      <p class="tips"><b style="color:#fff">Rain:</b> the host can set the weather to dry, rain or changeable. A wet track has much less grip and longer braking. On the three Grand Prix circuits, slick tyres are very slippery in the rain, so pit for wets — and pit again for slicks when it dries.</p>
+      <p class="tips"><b style="color:#fff">Pit stops:</b> on the Grand Prix circuits your tyres wear out and lose grip, and crashes damage the car and cost top speed. Drive into the pit lane on the inside of the main straight and stop in a yellow box for 2.5 seconds to get fresh tyres and repairs. A wrecked car is put back on track after a short delay.</p>
     </section>
     <footer>Drift District is a fan-made, non-commercial game for playing with friends. It is not affiliated with any racing series or team.</footer>
   </div>
-  <select id="mode0" hidden><option value="gp">gp</option><option value="city">city</option><option value="drift">drift</option></select>
+  <select id="mode0" hidden><option value="gp">gp</option><option value="gp2">gp2</option><option value="gp3">gp3</option><option value="city">city</option><option value="drift">drift</option></select>
   <select id="team" hidden><option value="">Custom paint</option></select>
 </div>
 
@@ -206,10 +209,13 @@
     <div class="code" id="roomCode"></div>
     <button id="copy">Copy invite link</button>
     <select id="modeSel">
-      <option value="gp">Grand Prix circuit</option>
+      <option value="gp">Alpine Ring</option>
+      <option value="gp2">São Paulo Circuit</option>
+      <option value="gp3">Monte Carlo Streets</option>
       <option value="city">Neon City — street race</option>
       <option value="drift">Drift arena</option>
     </select>
+    <select id="wxSel"><option value="dry">Weather: dry</option><option value="rain">Weather: rain</option><option value="mixed">Weather: changeable</option></select>
     <button id="startBtn" class="pri">Start race (Enter)</button>
     <button id="camBtn">Switch camera (C)</button>
     <button id="leave">Leave</button>
@@ -225,7 +231,7 @@
   <div id="toast"></div>
   <div id="results" class="box" hidden></div>
   <div id="drift"><span id="combo"></span><b id="score">0</b><small>DRIFT</small></div>
-  <div id="carstat" class="box"><span>TYRES</span><div class="mbar"><i id="tyreBar"></i></div><span>DAMAGE</span><div class="mbar"><i id="dmgBar"></i></div></div>
+  <div id="carstat" class="box"><span id="tyreLbl">TYRES</span><div class="mbar"><i id="tyreBar"></i></div><span>DAMAGE</span><div class="mbar"><i id="dmgBar"></i></div></div>
   <div id="speedo" class="box"><span id="gear">N</span><div><b id="spd">0</b><small>KMH</small><div id="nitro"><i></i></div></div></div>
   <canvas id="map" width="170" height="170"></canvas>
   <div id="touch">
