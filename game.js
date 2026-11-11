@@ -18,16 +18,16 @@ const CARS = [
   { id: 'brute', name: 'Brute V8', desc: 'Muscle power', color: '#8338ec', max: 74, acc: 24, grip: 6.2, steer: 2.2, type: 'muscle' },
 ];
 const TEAMS = [
-  { name: 'Rosso Corsa GP', c1: '#dc0000', c2: '#ffe600' },
-  { name: 'Taurus Racing', c1: '#121f45', c2: '#e2202c' },
-  { name: 'Argento Motorsport', c1: '#c4c9cf', c2: '#00d2be' },
-  { name: 'Papaya Works', c1: '#ff8000', c2: '#101216' },
-  { name: 'Emerald Racing', c1: '#00594f', c2: '#cedc00' },
-  { name: 'Azure Alps', c1: '#0078c8', c2: '#ff87bc' },
-  { name: 'Royal Blue GP', c1: '#00a0de', c2: '#041e42' },
-  { name: 'Volt Racing', c1: '#101216', c2: '#52e252' },
-  { name: 'Liberty Motorsport', c1: '#f4f4f4', c2: '#e10600' },
-  { name: 'Lagoon Racing', c1: '#1634cb', c2: '#f4f4f4' },
+  { name: 'Forrari', c1: '#dc0000', c2: '#ffe600' },
+  { name: 'Red Ball Racing', c1: '#121f45', c2: '#e2202c' },
+  { name: 'Mercidas', c1: '#c4c9cf', c2: '#00d2be' },
+  { name: 'McLaring', c1: '#ff8000', c2: '#101216' },
+  { name: 'Aston Marlin', c1: '#00594f', c2: '#cedc00' },
+  { name: 'Alpino', c1: '#0078c8', c2: '#ff87bc' },
+  { name: 'Willams', c1: '#00a0de', c2: '#041e42' },
+  { name: 'Sawber', c1: '#101216', c2: '#52e252' },
+  { name: 'Hass', c1: '#f4f4f4', c2: '#e10600' },
+  { name: 'Racing Bills', c1: '#1634cb', c2: '#f4f4f4' },
 ];
 const MODES = {
   city: { name: 'Neon City', laps: 2 },
