@@ -920,7 +920,22 @@ function initAudio() {
     const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     const nz = (type, f, q) => { const src = ctx.createBufferSource(); src.buffer = nb; src.loop = true; const bf = ctx.createBiquadFilter(); bf.type = type; bf.frequency.value = f; bf.Q.value = q; const g = ctx.createGain(); g.gain.value = 0; src.connect(bf); bf.connect(g); g.connect(master); src.start(); return { f: bf, g }; };
     audio = { ctx, master, lp, eg, o1: mk('sawtooth', .5), o2: mk('sawtooth', .35), o3: mk('square', .1), sub: mk('triangle', .5), exh: nz('bandpass', 300, .8), wind: nz('highpass', 1800, .5), tyre: nz('bandpass', 2400, 6), rainN: nz('highpass', 5000, .3), rpm: 0 };
-  } catch (e) { audio = {}; }
+    loadSamples();
+  } catch (e) { console.warn('Audio could not start', e); audio = {}; }
+}
+// real engine recordings: six rev-band loops (measured pitch in Hz) and one V8 loop cut from a longer recording
+const SND_F = [43, 60, 65, 70, 73, 76];
+async function loadSamples() {
+  try {
+    const c = audio.ctx, get = async u => c.decodeAudioData(await (await fetch(u)).arrayBuffer());
+    const mkSrc = (buf, f0) => { const src = c.createBufferSource(), g = c.createGain(); src.buffer = buf; src.loop = true; g.gain.value = 0; src.connect(g); g.connect(audio.master); src.start(); return { s: src, g, f0 }; };
+    const bufs = await Promise.all([0, 1, 2, 3, 4, 5].map(i => get('sounds/loop_' + i + '.wav')));
+    audio.loops = bufs.map((b, i) => mkSrc(b, SND_F[i]));
+    const v = await get('sounds/v8.ogg'), x = v.getChannelData(0), sr = v.sampleRate, a = Math.floor(9 * sr), n = Math.floor(1.8 * sr), xf = Math.floor(.15 * sr), lb = c.createBuffer(1, n, sr), y = lb.getChannelData(0);
+    for (let i = 0; i < n; i++) y[i] = x[a + i];
+    for (let k = 0; k < xf; k++) { const t = k / xf; y[n - xf + k] = y[n - xf + k] * (1 - t) + x[a - xf + k] * t; }
+    audio.v8 = mkSrc(lb, 70);
+  } catch (e) { console.warn('Engine recordings not loaded; using generated sound.', e); }
 }
 // [idle Hz, redline Hz, second-voice ratio, sub-bass level, brightness]
 const SOUND = { formula: [95, 560, 1.006, .12, 2.2], v8: [34, 185, 1.5, .8, 1], turbo: [55, 320, 1.01, .35, 1.4] };
@@ -934,7 +949,13 @@ function updateAudio(speed, thr) {
   const f = pr[0] + (pr[1] - pr[0]) * audio.rpm, on = muted || !opt.engine || me.wreckT > 0 ? 0 : 1, th = Math.abs(thr);
   set(audio.o1.o.frequency, f); set(audio.o2.o.frequency, f * pr[2]); set(audio.o3.o.frequency, f * 2); set(audio.sub.o.frequency, f * .5); set(audio.sub.g.gain, pr[3]);
   set(audio.lp.frequency, (300 + audio.rpm * 2200 + th * 1400) * pr[4]);
-  set(audio.eg.gain, on * (.1 + th * .2 + audio.rpm * .08));
+  if (audio.loops) {
+    const key = sp.snd || 'v8', useV8 = key === 'v8' && audio.v8, rg = { formula: [70, 240], v8: [36, 125], turbo: [48, 165] }[key];
+    const ft = rg[0] * (rg[1] / rg[0]) ** audio.rpm, vol = on * (.35 + th * .45 + audio.rpm * .15), pos = audio.rpm * 5;
+    audio.loops.forEach((L, i) => { set(L.s.playbackRate, clamp(ft / L.f0, .3, 4)); set(L.g.gain, useV8 ? 0 : vol * Math.max(0, 1 - Math.abs(pos - i))); });
+    if (audio.v8) { set(audio.v8.s.playbackRate, clamp(ft / 70, .3, 4)); set(audio.v8.g.gain, useV8 ? vol * 1.6 : 0); }
+    set(audio.eg.gain, on * .025 * (1 + th));
+  } else set(audio.eg.gain, on * (.1 + th * .2 + audio.rpm * .08));
   set(audio.exh.f.frequency, f * 2.2); set(audio.exh.g.gain, on * th * (.05 + audio.rpm * .1));
   set(audio.wind.g.gain, on * Math.min(.13, speed / 85 * .13));
   set(audio.tyre.f.frequency, 1700 + speed * 22); set(audio.tyre.g.gain, on * (me.drifting ? .08 : 0));
@@ -1522,4 +1543,4 @@ function frame(now) {
   }
 }
 requestAnimationFrame(frame);
-window.__dd = { me, net, race, state, remotes, get world() { return world; } };
+window.__dd = { get audio() { return audio; }, me, net, race, state, remotes, get world() { return world; } };
