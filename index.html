@@ -11,7 +11,7 @@
   *{box-sizing:border-box}
   [hidden]{display:none!important}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:"Titillium Web","Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
-  canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+  canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;filter:saturate(1.12) contrast(1.04)}
   button,select,input{font:inherit;color:inherit}
   button{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.08);border-radius:8px;padding:10px 16px;font-weight:700}
   button:hover{background:rgba(255,255,255,.17)}
@@ -47,6 +47,16 @@
   .pill{border-radius:999px;background:#2a2a38;border:1px solid transparent;padding:7px 16px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;cursor:pointer}
   .pill:hover{background:#383849}
   .pill.on{background:#fff;color:#15151e}
+  .wrap>.pills{background:var(--bg)}
+  .pills.sub{padding-top:0}
+  .pills.sub .pill{font-size:13px;background:#1f1f2b;border-color:var(--line)}
+  .pills.sub .pill.on{background:var(--red);color:#fff;border-color:var(--red)}
+  #vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.36) 100%)}
+  #settings{top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:auto;min-width:270px;display:flex;flex-direction:column;gap:12px;padding:18px 20px}
+  #settings h2{margin:0;font-style:italic}
+  #settings label{display:flex;align-items:center;gap:10px;font-weight:600}
+  #settings input[type=checkbox]{width:18px;height:18px;accent-color:var(--red)}
+  #settings input[type=range]{flex:1;accent-color:var(--red)}
   .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:26px;align-items:stretch}
   .hero{z-index:0!important;min-height:440px;border-radius:14px;box-shadow:0 0 0 300vmax var(--bg);display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;border:1px solid var(--line)}
   .hero .in{padding:60px 24px 22px;background:linear-gradient(transparent,rgba(8,8,14,.93) 42%)}
@@ -57,7 +67,7 @@
   .form #name{flex:1;min-width:170px}
   #code{width:92px;text-transform:uppercase;text-align:center;letter-spacing:3px;font-weight:700}
   #status{min-height:22px;color:var(--ye);margin:10px 0 0;font-weight:600}
-  .cars{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:100%}
+  .cars{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .car{border-radius:12px;padding:14px;cursor:pointer;background:var(--card);border:2px solid transparent;display:flex;flex-direction:column;justify-content:flex-end;min-height:92px;background-image:repeating-linear-gradient(115deg,transparent 0 30px,rgba(255,255,255,.03) 30px 40px)}
   .car:hover{background-color:#292938}
   .car.sel{border-color:var(--red)}
@@ -67,7 +77,15 @@
   .bars{margin-top:8px;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:11px;color:var(--dim);align-items:center}
   .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
   .bar i{display:block;height:100%;background:var(--red)}
-  section{padding:34px 0 0}
+  section{padding:22px 0 0}
+  section.tab{display:none}
+  section.tab.on{display:block}
+  #garage{display:flex;flex-direction:column;gap:16px}
+  .mapcard{background:var(--card);border-radius:12px;padding:12px;display:flex;gap:14px;align-items:center;flex:1}
+  .mapcard canvas{width:56%;max-width:300px;height:auto}
+  .mapcard small{display:block;font-size:11px;color:var(--dim);letter-spacing:1px;font-weight:700}
+  .mapcard b{display:block;font-size:19px;line-height:1.2}
+  .mapcard span{color:var(--dim);font-size:13px}
   section h2{margin:0 0 14px;font-size:24px;font-weight:900;font-style:italic;border-top:4px solid var(--red);border-right:4px solid var(--red);border-top-right-radius:14px;padding:10px 14px 0 0}
   .teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
   .team{background:var(--card);border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid transparent}
@@ -143,11 +161,12 @@
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="vig"></div>
 
 <div id="menu">
   <header class="top"><div class="wrap">
     <div class="logo"><i></i>DRIFT&nbsp;<span>DISTRICT</span></div>
-    <nav><a href="#race">Race</a><a href="#garage">Garage</a><a href="#teams">Teams</a><a href="#records">Records</a><a href="#controls">Controls</a></nav>
+    <nav><a href="#" data-go="race">Race</a><a href="#" data-go="teams">Teams</a><a href="#" data-go="records">Records</a><a href="#" data-go="controls">New here?</a></nav>
   </div></header>
   <div class="sub"><div class="wrap">
     <div><small>NEXT SESSION</small><b><span class="dot"></span><span id="roundName">Grand Prix Circuit</span> &rsaquo;</b></div>
@@ -155,19 +174,8 @@
   </div></div>
 
   <div class="wrap" id="race">
-    <div class="pills">
-      <span class="pill" data-mode="gp">Austria</span>
-      <span class="pill" data-mode="gp2">São Paulo</span>
-      <span class="pill" data-mode="gp3">Monte Carlo</span>
-      <span class="pill" data-mode="gp4">Japan</span>
-      <span class="pill" data-mode="gp5">Singapore (night)</span>
-      <span class="pill" data-mode="rally">Rally stage</span>
-      <span class="pill" data-mode="city">Neon City street race</span>
-      <span class="pill" data-mode="drift">Drift Arena</span>
-      <a class="pill" href="#teams">Teams</a>
-      <a class="pill" href="#records">Records</a>
-      <a class="pill" href="#controls">New here?</a>
-    </div>
+    <div class="pills" id="catPills"></div>
+    <div class="pills sub" id="mapPills"></div>
     <div class="grid">
       <div class="hero" id="heroBox"><div class="in">
         <h1><u>Lights out — race your friends online</u></h1>
@@ -183,25 +191,27 @@
         </div>
         <p id="status"></p>
       </div></div>
-      <div id="garage"><div id="cars" class="cars"></div></div>
+      <div id="garage"><div id="cars" class="cars"></div>
+        <div class="mapcard"><canvas id="mapPrev" width="300" height="190"></canvas><div><small>MAP</small><b id="mapName"></b><span id="mapInfo"></span></div></div></div>
     </div>
 
-    <section id="teams">
+    <div class="pills" id="tabStrip" style="padding-bottom:0"><span class="pill" data-tab="teams">Teams</span><span class="pill" data-tab="records">Records</span><span class="pill" data-tab="controls">New here?</span></div>
+    <section id="teams" class="tab">
       <h2>Teams</h2>
       <div id="teamCards" class="teams"></div>
       <div class="custom">Or custom paint <input type="color" id="color" value="#1d7cf2"></div>
     </section>
 
-    <section id="records">
+    <section id="records" class="tab">
       <h2>Your records</h2>
       <table class="rec"><thead><tr><th>EVENT</th><th>PERSONAL BEST</th></tr></thead><tbody id="recBody"></tbody></table>
     </section>
 
-    <section id="controls">
+    <section id="controls" class="tab">
       <h2>Controls</h2>
       <div class="keys">
         <div><b>W A S D</b>or arrows — drive</div><div><b>Space</b>handbrake / drift</div><div><b>Shift</b>nitro boost</div>
-        <div><b>C</b>cockpit / chase camera</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div>
+        <div><b>C</b>cockpit / chase camera</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div><div><b>Esc</b>settings</div><div><b>1 2 3 4</b>tyre choice</div>
       </div>
       <p class="tips"><b style="color:#fff">Tyres:</b> on the circuits pick Soft (fastest, wears out in about 3 laps), Medium (about 5 laps), Hard (slower, lasts most of a race) or Wet, with the round buttons or keys 1–4. Before the start the choice goes on straight away; during a race it goes on at your next pit stop.</p>
       <p class="tips"><b style="color:#fff">Rain:</b> the host can set the weather to dry, rain or changeable. A wet track has much less grip and longer braking. On the three Grand Prix circuits, slick tyres are very slippery in the rain, so pit for wets — and pit again for slicks when it dries.</p>
@@ -233,6 +243,7 @@
     <div id="tyreSel"><button data-ty="soft" style="--c:#e10600">S</button><button data-ty="medium" style="--c:#ffd23f">M</button><button data-ty="hard" style="--c:#f4f4f4">H</button><button data-ty="wet" style="--c:#1f6fe0">W</button></div>
     <button id="startBtn" class="pri">Start race (Enter)</button>
     <button id="camBtn">Switch camera (C)</button>
+    <button id="setBtn">Settings (Esc)</button>
     <button id="leave">Leave</button>
   </div>
   <div id="top" class="box">
@@ -247,6 +258,13 @@
   <div id="toast"></div>
   <div id="radio"></div>
   <div id="results" class="box" hidden></div>
+  <div id="settings" class="box" hidden><h2>Settings</h2>
+    <label><input type="checkbox" id="oMusic"> Music</label>
+    <label><input type="checkbox" id="oEngine"> Engine and car sounds</label>
+    <label><input type="checkbox" id="oVoice"> Race engineer voice</label>
+    <label><input type="checkbox" id="oShadows"> Shadows (turn off for speed)</label>
+    <label>Volume <input type="range" id="oVol" min="0" max="100"></label>
+    <button id="setClose">Close</button></div>
   <div id="drift"><span id="combo"></span><b id="score">0</b><small>DRIFT</small></div>
   <div id="carstat" class="box"><span id="tyreLbl">TYRES</span><div class="mbar"><i id="tyreBar"></i></div><span>DAMAGE</span><div class="mbar"><i id="dmgBar"></i></div></div>
   <div id="speedo" class="box"><span id="gear">N</span><div><b id="spd">0</b><small>KMH</small><div id="nitro"><i></i></div></div></div>
