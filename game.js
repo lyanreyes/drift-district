@@ -897,18 +897,19 @@ const K = (...c) => c.some(k => keys.has(k));
 
 /* ───────────────────────── audio ───────────────────────── */
 let audio = null, muted = false;
-const opt = { master: .8, engine: true, music: true, voice: true, shadows: true };
+const opt = { master: .8, musicVol: .5, engine: true, music: true, voice: true, shadows: true };
 try { Object.assign(opt, JSON.parse(localStorage.getItem('dd-opt') || '{}')); } catch (e) { }
 const saveOpt = () => { try { localStorage.setItem('dd-opt', JSON.stringify(opt)); } catch (e) { } };
 let musicStep = 0;
+// calm background pad: slow soft chords with a sparse, quiet melody
 setInterval(() => {
   if (!audio || !audio.ctx || muted || !opt.music || state.screen !== 'play') return;
-  const c = audio.ctx, t = c.currentTime + .03, st = musicStep++ % 32, root = [55, 55, 65.4, 49][(st >> 3) % 4];
-  const note = (f, dur, type, vol) => { const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(vol * opt.master, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + .02); };
-  if (st % 2 === 0) note(root * (st % 8 === 6 ? 1.5 : 1), .24, 'sawtooth', .045);
-  note(root * 4 * [1, 1.5, 2, 2.4, 3, 2.4, 2, 1.5][st % 8], .15, 'triangle', .026);
-  if (st % 8 === 0) note(root * 2, 1.0, 'sine', .04);
-}, 140);
+  const c = audio.ctx, t = c.currentTime + .05, st = musicStep++ % 32, root = [110, 87.3, 130.8, 98][(st >> 3) % 4], lv = opt.master * opt.musicVol;
+  const note = (f, dur, vol, atk) => { const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(); o.type = 'sine'; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = 900;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol * lv, t + atk); g.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(lp); lp.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + .05); };
+  if (st % 8 === 0) for (const r of [1, 1.5, 2, 2.5]) note(root * r, 3.4, .028, .6);
+  if (st % 4 === 2) note(root * [3, 4, 3.75, 5][(st >> 2) % 4], 1.1, .022, .08);
+}, 420);
 function initAudio() {
   if (audio) return;
   try {
@@ -1455,6 +1456,7 @@ $('modeSel').onchange = e => { e.target.blur(); const [cat, m] = e.target.value.
 $('wxSel').onchange = e => { e.target.blur(); setWeather(e.target.value); };
 document.querySelectorAll('#tyreSel button').forEach(b => b.onclick = e => { e.target.blur(); pickTyre(b.dataset.ty); }); pickTyre('medium', true);
 for (const [k, id] of [['music', 'oMusic'], ['engine', 'oEngine'], ['voice', 'oVoice'], ['shadows', 'oShadows']]) { const el = $(id); el.checked = opt[k]; el.onchange = () => { opt[k] = el.checked; saveOpt(); el.blur(); }; }
+$('oMus').value = opt.musicVol * 100; $('oMus').oninput = e => { opt.musicVol = e.target.value / 100; saveOpt(); };
 $('oVol').value = opt.master * 100; $('oVol').oninput = e => { opt.master = e.target.value / 100; saveOpt(); };
 $('setBtn').onclick = e => { e.target.blur(); $('settings').hidden = !$('settings').hidden; }; $('setClose').onclick = () => { $('settings').hidden = true; };
 $('camBtn').onclick = e => { e.target.blur(); toggleCam(); };
