@@ -981,9 +981,9 @@ function radio(text) {
 }
 function pickTyre(c, quiet) {
   if (!TYRES[c]) return; me.nextComp = c;
-  if (race.phase !== 'run') { me.compound = c; me.tyre = 1; }
+  if (race.phase === 'count') { me.compound = c; me.tyre = 1; }
   document.querySelectorAll('#tyreSel button').forEach(b => b.classList.toggle('on', b.dataset.ty === c));
-  if (!quiet) toast(race.phase === 'run' ? TYRES[c].name + ' tyres will go on at your next pit stop' : TYRES[c].name + ' tyres fitted');
+  if (!quiet) toast(race.phase === 'count' ? TYRES[c].name + ' tyres fitted for the start' : TYRES[c].name + ' tyres will go on at your next pit stop');
 }
 function penalty(sec, why) { me.penalty += sec; toast('+' + sec + 's penalty — ' + why); radioBusy = 0; radio(sec + ' second penalty for ' + why + '.'); }
 function lapRadio() {
