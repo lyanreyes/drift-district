@@ -58,7 +58,7 @@
   #code{width:92px;text-transform:uppercase;text-align:center;letter-spacing:3px;font-weight:700}
   #status{min-height:22px;color:var(--ye);margin:10px 0 0;font-weight:600}
   .cars{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:100%}
-  .car{border-radius:12px;padding:14px;cursor:pointer;background:var(--card);border:2px solid transparent;display:flex;flex-direction:column;justify-content:flex-end;min-height:150px;background-image:repeating-linear-gradient(115deg,transparent 0 30px,rgba(255,255,255,.03) 30px 40px)}
+  .car{border-radius:12px;padding:14px;cursor:pointer;background:var(--card);border:2px solid transparent;display:flex;flex-direction:column;justify-content:flex-end;min-height:92px;background-image:repeating-linear-gradient(115deg,transparent 0 30px,rgba(255,255,255,.03) 30px 40px)}
   .car:hover{background-color:#292938}
   .car.sel{border-color:var(--red)}
   .car b{display:block;font-size:19px;line-height:1.2}
@@ -95,6 +95,9 @@
   #room .code{font-size:13px;color:var(--dim);font-weight:700}
   #room .code b{font-size:20px;color:var(--cy);letter-spacing:3px;margin-left:6px}
   #room button,#room select{padding:6px 10px;font-size:14px;width:100%}
+  #tyreSel{display:flex;gap:8px;justify-content:space-between}
+  #room #tyreSel button{width:40px;height:40px;padding:0;border-radius:50%;border:4px solid var(--c);background:#111;font-weight:900}
+  #room #tyreSel button.on{background:var(--c);color:#111}
   #board{top:12px;right:12px;min-width:190px;font-size:14px;padding:8px}
   #board table{border-collapse:collapse}
   #board th{color:var(--dim);font-size:10px;font-weight:700;text-align:left;padding:2px 7px;letter-spacing:.5px;text-transform:uppercase}
@@ -106,6 +109,8 @@
   #msg{top:28%;left:50%;transform:translateX(-50%);font-size:clamp(48px,12vw,120px);font-weight:900;font-style:italic;text-shadow:0 0 30px rgba(225,6,0,.9),0 4px 0 #000;white-space:nowrap}
   #toast{bottom:150px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;opacity:0;transition:opacity .3s;white-space:nowrap;font-weight:600}
   #toast.on{opacity:1}
+  #radio{top:76px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.82);border-left:4px solid var(--red);border-radius:4px;padding:6px 14px;font-weight:700;opacity:0;transition:opacity .25s;max-width:80vw;text-align:center}
+  #radio.on{opacity:1}
   #results{top:50%;left:50%;transform:translate(-50%,-50%);min-width:280px;pointer-events:auto;text-align:center}
   #results h2{margin:0 0 8px;font-style:italic}
   #results .r{display:flex;justify-content:space-between;gap:20px;padding:4px 0;font-variant-numeric:tabular-nums}
@@ -151,9 +156,12 @@
 
   <div class="wrap" id="race">
     <div class="pills">
-      <span class="pill" data-mode="gp">Alpine Ring</span>
+      <span class="pill" data-mode="gp">Austria</span>
       <span class="pill" data-mode="gp2">São Paulo</span>
       <span class="pill" data-mode="gp3">Monte Carlo</span>
+      <span class="pill" data-mode="gp4">Japan</span>
+      <span class="pill" data-mode="gp5">Singapore (night)</span>
+      <span class="pill" data-mode="rally">Rally stage</span>
       <span class="pill" data-mode="city">Neon City street race</span>
       <span class="pill" data-mode="drift">Drift Arena</span>
       <a class="pill" href="#teams">Teams</a>
@@ -161,7 +169,7 @@
       <a class="pill" href="#controls">New here?</a>
     </div>
     <div class="grid">
-      <div class="hero"><div class="in">
+      <div class="hero" id="heroBox"><div class="in">
         <h1><u>Lights out — race your friends online</u></h1>
         <p>Enter a username, create a lobby, and send your friends the invite link.</p>
         <div class="form">
@@ -195,12 +203,15 @@
         <div><b>W A S D</b>or arrows — drive</div><div><b>Space</b>handbrake / drift</div><div><b>Shift</b>nitro boost</div>
         <div><b>C</b>cockpit / chase camera</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div>
       </div>
+      <p class="tips"><b style="color:#fff">Tyres:</b> on the circuits pick Soft (fastest, wears out in about 3 laps), Medium (about 5 laps), Hard (slower, lasts most of a race) or Wet, with the round buttons or keys 1–4. Before the start the choice goes on straight away; during a race it goes on at your next pit stop.</p>
       <p class="tips"><b style="color:#fff">Rain:</b> the host can set the weather to dry, rain or changeable. A wet track has much less grip and longer braking. On the three Grand Prix circuits, slick tyres are very slippery in the rain, so pit for wets — and pit again for slicks when it dries.</p>
       <p class="tips"><b style="color:#fff">Pit stops:</b> on the Grand Prix circuits your tyres wear out and lose grip, and crashes damage the car and cost top speed. Drive into the pit lane on the inside of the main straight and stop in a yellow box for 2.5 seconds to get fresh tyres and repairs. A wrecked car is put back on track after a short delay.</p>
+      <p class="tips"><b style="color:#fff">Penalties:</b> circuit races are 10 laps. Running off the track at speed gives a warning, and the third one is a 5-second penalty. Ramming another car from behind also costs 5 seconds. The pit lane has an automatic 100 km/h limiter. Penalties are added to your finish time.</p>
+      <p class="tips"><b style="color:#fff">Off-road:</b> the rally car, 4x4 pickup and monster truck keep their grip and speed on grass and dirt, so they suit the Rally Stage. The monster truck takes far less crash damage.</p>
     </section>
     <footer>Drift District is a fan-made, non-commercial game for playing with friends. It is not affiliated with any racing series or team.</footer>
   </div>
-  <select id="mode0" hidden><option value="gp">gp</option><option value="gp2">gp2</option><option value="gp3">gp3</option><option value="city">city</option><option value="drift">drift</option></select>
+  <select id="mode0" hidden><option value="gp">gp</option><option value="gp2">gp2</option><option value="gp3">gp3</option><option value="gp4">gp4</option><option value="gp5">gp5</option><option value="rally">rally</option><option value="city">city</option><option value="drift">drift</option></select>
   <select id="team" hidden><option value="">Custom paint</option></select>
 </div>
 
@@ -209,13 +220,17 @@
     <div class="code" id="roomCode"></div>
     <button id="copy">Copy invite link</button>
     <select id="modeSel">
-      <option value="gp">Alpine Ring</option>
+      <option value="gp">Austria Ring</option>
       <option value="gp2">São Paulo Circuit</option>
       <option value="gp3">Monte Carlo Streets</option>
+      <option value="gp4">Japan Circuit</option>
+      <option value="gp5">Singapore Night Streets</option>
+      <option value="rally">Rally Stage (dirt)</option>
       <option value="city">Neon City — street race</option>
       <option value="drift">Drift arena</option>
     </select>
     <select id="wxSel"><option value="dry">Weather: dry</option><option value="rain">Weather: rain</option><option value="mixed">Weather: changeable</option></select>
+    <div id="tyreSel"><button data-ty="soft" style="--c:#e10600">S</button><button data-ty="medium" style="--c:#ffd23f">M</button><button data-ty="hard" style="--c:#f4f4f4">H</button><button data-ty="wet" style="--c:#1f6fe0">W</button></div>
     <button id="startBtn" class="pri">Start race (Enter)</button>
     <button id="camBtn">Switch camera (C)</button>
     <button id="leave">Leave</button>
@@ -225,10 +240,12 @@
     <div><small>POS</small><span id="pos">1/1</span></div>
     <div><small>TIME</small><span id="time">0:00.000</span></div>
     <div><small>BEST LAP</small><span id="best">--:--.---</span></div>
+    <div><small>PENALTY</small><span id="pen">—</span></div>
   </div>
   <div id="board" class="box"></div>
   <div id="msg"></div>
   <div id="toast"></div>
+  <div id="radio"></div>
   <div id="results" class="box" hidden></div>
   <div id="drift"><span id="combo"></span><b id="score">0</b><small>DRIFT</small></div>
   <div id="carstat" class="box"><span id="tyreLbl">TYRES</span><div class="mbar"><i id="tyreBar"></i></div><span>DAMAGE</span><div class="mbar"><i id="dmgBar"></i></div></div>
