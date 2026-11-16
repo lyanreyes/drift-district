@@ -808,14 +808,27 @@ function tougeWorld(kind) {
   const N = Math.round(curve.getLength() / 3), sp = curve.getSpacedPoints(N - 1); if (up) sp.reverse();
   const plane = (x, z) => 4 + (clamp(z, -330, 330) + 330) * .11 + 1.4 * Math.sin(x * .03) * Math.sin(z * .045);
   const hs = sp.map(p => plane(p.x, p.z));
+  for (let pass = 0; pass < 4; pass++) { const c = hs.slice(); for (let i = 1; i < N - 1; i++) hs[i] = (c[i - 1] + 2 * c[i] + c[i + 1]) / 4; }
   const tan = i => { const a = sp[Math.max(0, i - 1)], b = sp[Math.min(N - 1, i + 1)], l = Math.hypot(b.x - a.x, b.z - a.z); return [(b.x - a.x) / l, (b.z - a.z) / l]; };
-  const near = (x, z) => { let m = 1e12, bi = 0; for (let i = 0; i < N; i++) { const p = sp[i], d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < m) { m = d; bi = i; } } const [tx, tz] = tan(bi), dx = x - sp[bi].x, dz = z - sp[bi].z; return { i: bi, d: Math.sqrt(m), tx, tz, u: clamp((dx * tx + dz * tz) / 3, -.5, .5), off: dx * tz - dz * tx }; };
-  const roadH = n => hs[n.i] + n.u * (hs[Math.min(N - 1, n.i + 1)] - hs[Math.max(0, n.i - 1)]) / 2;
+  // nearest point on the road; the road height is interpolated along the exact segment so it has no steps
+  let hint = 0;
+  const near = (x, z, full) => {
+    let m = 1e12, bi = 0, a = 0, b = N;
+    if (!full) { a = Math.max(0, hint - 40); b = Math.min(N, hint + 41); }
+    for (let i = a; i < b; i++) { const p = sp[i], d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < m) { m = d; bi = i; } }
+    if (!full && m > 900) return near(x, z, true);
+    if (!full) hint = bi;
+    const [tx, tz] = tan(bi), dx = x - sp[bi].x, dz = z - sp[bi].z;
+    const j = bi < N - 1 && dx * (sp[bi + 1].x - sp[bi].x) + dz * (sp[bi + 1].z - sp[bi].z) >= 0 ? bi : Math.max(0, bi - 1), j1 = Math.min(N - 1, j + 1);
+    const ex = sp[j1].x - sp[j].x, ez = sp[j1].z - sp[j].z, t = clamp(((x - sp[j].x) * ex + (z - sp[j].z) * ez) / (ex * ex + ez * ez || 1), 0, 1);
+    return { i: bi, d: Math.sqrt(m), tx, tz, off: dx * tz - dz * tx, rh: hs[j] + (hs[j1] - hs[j]) * t };
+  };
+  const roadH = n => n.rh;
   const height = (x, z) => { const n = near(x, z), f = clamp((n.d - (width / 2 + 1.6)) / 9, 0, 1), t = f * f * (3 - 2 * f); return roadH(n) * (1 - t) + plane(x, z) * t + (n.d < width / 2 + 1.2 ? .14 : 0); };
   // hillside
   const S = 780, seg = 156, geo = new THREE.PlaneGeometry(S, S, seg, seg).rotateX(-Math.PI / 2), pa = geo.attributes.position, uv = geo.attributes.uv, col = new Float32Array(pa.count * 3);
   for (let i = 0; i < pa.count; i++) {
-    const x = pa.getX(i), z = pa.getZ(i), n = near(x, z), f = clamp((n.d - (width / 2 + 1.6)) / 9, 0, 1), t = f * f * (3 - 2 * f);
+    const x = pa.getX(i), z = pa.getZ(i), n = near(x, z, true), f = clamp((n.d - (width / 2 + 1.6)) / 9, 0, 1), t = f * f * (3 - 2 * f);
     pa.setY(i, roadH(n) * (1 - t) + plane(x, z) * t - (n.d < width / 2 + 1.2 ? .05 : 0));
     const k = n.d < width / 2 + 6 ? .55 : .8 + .2 * Math.sin(x * .07) * Math.sin(z * .09); col[i * 3] = k * (n.d < width / 2 + 6 ? 2.2 : 1); col[i * 3 + 1] = k; col[i * 3 + 2] = k * (n.d < width / 2 + 6 ? 1.6 : 1);
     uv.setXY(i, uv.getX(i) * S / 22, uv.getY(i) * S / 22);
@@ -834,7 +847,7 @@ function tougeWorld(kind) {
   li.forEach((idx, k) => { const sd = k % 2 ? 1 : -1, [tx, tz] = tan(idx), x = sp[idx].x + tz * sd * (width / 2 + 2.3), z = sp[idx].z - tx * sd * (width / 2 + 2.3); dummy.rotation.set(0, Math.atan2(tx, tz), 0); dummy.position.set(x - tz * sd * 1.2, hs[idx] + 7, z + tx * sd * 1.2); dummy.updateMatrix(); lamp.setMatrixAt(k, dummy.matrix); dummy.position.set(x, hs[idx] + 3.5, z); dummy.updateMatrix(); pole.setMatrixAt(k, dummy.matrix); });
   dummy.rotation.set(0, 0, 0); g.add(lamp, pole);
   const TN = 460, trees = new THREE.InstancedMesh(PINE, new THREE.MeshLambertMaterial({ color: 0x2c7a3e, vertexColors: true, side: THREE.DoubleSide }), TN); let n = 0, guard = 0;
-  while (n < TN && guard++ < 6000) { const x = (R() * 2 - 1) * 345, z = (R() * 2 - 1) * 345, nr = near(x, z); if (nr.d < width / 2 + 7) continue; const sc = .7 + R() * .9; dummy.position.set(x, height(x, z) + 9.3 * sc, z); dummy.scale.set(sc, sc, sc); dummy.updateMatrix(); trees.setMatrixAt(n++, dummy.matrix); }
+  while (n < TN && guard++ < 6000) { const x = (R() * 2 - 1) * 345, z = (R() * 2 - 1) * 345, nr = near(x, z, true); if (nr.d < width / 2 + 7) continue; const sc = .7 + R() * .9; dummy.position.set(x, height(x, z) + 9.3 * sc, z); dummy.scale.set(sc, sc, sc); dummy.updateMatrix(); trees.setMatrixAt(n++, dummy.matrix); }
   trees.count = n; dummy.scale.set(1, 1, 1); trees.castShadow = true; g.add(trees);
   const gm = new THREE.MeshLambertMaterial({ color: 0x222831 });
   for (const [idx, txt, bg] of [[11, 'START', '#1f9d3a'], [N - 6, 'FINISH', '#e10600']]) {
@@ -845,7 +858,7 @@ function tougeWorld(kind) {
   const head = new THREE.SpotLight(0xfff2d0, 900, 95, .5, .55, 1.5); g.add(head, head.target);
   const cps = []; for (let k = 1; k <= 24; k++) { const p = sp[Math.round(11 + k * (N - 17) / 24)]; cps.push({ x: p.x, z: p.z, r: 16 }); }
   return {
-    group: g, B, cps, colliders: [], showCps: false, height, head, onRoad: () => true,
+    group: g, B, cps, colliders: [], showCps: false, height, head, noAir: true, onRoad: () => true,
     contain: m => {
       const nr = near(m.x, m.z), lim = width / 2 + .45;
       if (nr.i <= 1 || nr.i >= N - 2) { const q = sp[clamp(nr.i, 3, N - 4)]; m.x = q.x; m.z = q.z; m.vx *= .3; m.vz *= .3; return 0; }
@@ -1198,7 +1211,7 @@ function stepCar(dt, now) {
   if (world.height && !me.air) {
     vf -= 9.8 * slope / Math.sqrt(1 + slope * slope) * dt;
     const have = (s.big ? .55 : s.off ? .34 : .2) * trac;
-    if (thr > 0 && slope > have && vf > -1) { vf -= (slope - have) * 60 * dt; if (Math.random() < .3) puff(me.x - Math.sin(me.h) * 2, me.z - Math.cos(me.h) * 2); me.stuckT += dt; if (me.stuckT > 1.4) { me.stuckT = -6; toast(s.off ? 'Wheels spinning! Air down [ , low range L, or winch E' : 'Too steep for this car'); } }
+    if (world.loose && thr > 0 && slope > have && vf > -1) { vf -= (slope - have) * 60 * dt; if (Math.random() < .3) puff(me.x - Math.sin(me.h) * 2, me.z - Math.cos(me.h) * 2); me.stuckT += dt; if (me.stuckT > 1.4) { me.stuckT = -6; toast(s.off ? 'Wheels spinning! Air down [ , low range L, or winch E' : 'Too steep for this car'); } }
     else if (me.stuckT > 0) me.stuckT = 0; else if (me.stuckT < 0) me.stuckT = Math.min(0, me.stuckT + dt);
     if (me.lowR && thr > 0 && vf < 13) vf += s.acc * .7 * dt;
   }
@@ -1292,7 +1305,7 @@ function stepCar(dt, now) {
       }
     } else {
       const vg = clamp((gh - me.y) / dt, -40, 40);
-      if (me.vy - 26 * dt > vg + .15 && speed > 7) { me.air = true; me.airT = 0; me.y += me.vy * dt; } else { me.y = gh; me.vy = vg; }
+      if (!world.noAir && me.vy - 26 * dt > vg + .15 && speed > 7) { me.air = true; me.airT = 0; me.y += me.vy * dt; } else { me.y = gh; me.vy = vg; }
     }
   } else { me.y = 0; me.air = false; }
 
