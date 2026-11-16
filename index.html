@@ -162,6 +162,8 @@
   #speedo small{margin-left:5px;font-weight:700}
   #nitro{margin-top:6px;width:130px;height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
   #nitro i{display:block;height:100%;width:100%;background:var(--cy)}
+  #rpmB{margin-top:5px;width:130px;height:10px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
+  #rpmB i{display:block;height:100%;width:0;background:var(--ye)}
   #carstat{bottom:104px;right:16px;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--dim);display:grid;grid-template-columns:auto 110px;gap:5px 10px;align-items:center;padding:8px 12px}
   .mbar{height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
   .mbar i{display:block;height:100%}
@@ -233,6 +235,8 @@
         <div><b>C</b>cockpit / chase camera</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div><div><b>Esc</b>settings</div><div><b>1 2 3 4</b>tyre choice</div>
       </div>
       <p class="tips"><b style="color:#fff">Drifting:</b> in the street, drift and touge cars you can start a slide three ways: tap the handbrake, brake while turning in, or lift off the throttle mid-corner. Then get back on the throttle to hold the slide and keep your speed, and steer against it to control the angle. Lift off to straighten up.</p>
+      <p class="tips"><b style="color:#fff">Street Drag:</b> a straight quarter mile for up to 8 cars, each in its own lane, no steering. Wait for all five lights to go out (the hold is random), then hit the throttle — going early is a jump start and costs a second. Shift up with <b style="color:#fff">E</b> or <b style="color:#fff">Space</b> when the rev bar turns green for a perfect shift; too early bogs the engine, too late hits the limiter. Shift for nitrous.</p>
+      <p class="tips"><b style="color:#fff">Traffic, AI and dents:</b> the Tokyo Expressway (Street mode) is a wide night highway with ordinary cars to weave through — hitting one damages you. The host can add AI opponents on circuits, the expressway and the drag strip from the "AI cars" menu. Crashes now leave visible dents; a pit stop, respawn or new race repairs them.</p>
       <p class="tips"><b style="color:#fff">Tyres:</b> on the circuits pick Soft (fastest, wears out in about 3 laps), Medium (about 5 laps), Hard (slower, lasts most of a race) or Wet, with the round buttons or keys 1–4. Tyres only change at a pit stop: your choice goes on the next time you stop in a pit box. The one exception is the starting grid, where your choice is fitted during the countdown.</p>
       <p class="tips"><b style="color:#fff">Rain:</b> the host can set the weather to dry, rain or changeable. A wet track has much less grip and longer braking. On the three Grand Prix circuits, slick tyres are very slippery in the rain, so pit for wets — and pit again for slicks when it dries.</p>
       <p class="tips"><b style="color:#fff">Pit stops:</b> on the Grand Prix circuits your tyres wear out and lose grip, and crashes damage the car and cost top speed. Drive into the pit lane on the inside of the main straight and stop in a yellow box for 2.5 seconds to get fresh tyres and repairs. A wrecked car is put back on track after a short delay.</p>
@@ -261,6 +265,7 @@
       <option value="drift">Drift arena</option>
     </select>
     <select id="wxSel"><option value="dry">Weather: dry</option><option value="rain">Weather: rain</option><option value="mixed">Weather: changeable</option></select>
+    <select id="botSel"><option value="0">AI cars: none</option><option value="1">AI cars: 1</option><option value="3">AI cars: 3</option><option value="5">AI cars: 5</option><option value="7">AI cars: 7</option></select>
     <div id="tyreSel"><button data-ty="soft" style="--c:#e10600">S</button><button data-ty="medium" style="--c:#ffd23f">M</button><button data-ty="hard" style="--c:#f4f4f4">H</button><button data-ty="wet" style="--c:#1f6fe0">W</button></div>
     <button id="startBtn" class="pri">Start race (Enter)</button>
     <button id="camBtn">Switch camera (C)</button>
@@ -297,7 +302,7 @@
     <button id="setClose">Close</button></div>
   <div id="drift"><span id="combo"></span><b id="score">0</b><small>DRIFT</small></div>
   <div id="carstat" class="box"><span id="tyreLbl">TYRES</span><div class="mbar"><i id="tyreBar"></i></div><span>DAMAGE</span><div class="mbar"><i id="dmgBar"></i></div></div>
-  <div id="speedo" class="box"><span id="gear">N</span><div><b id="spd">0</b><small>KMH</small><div id="nitro"><i></i></div></div></div>
+  <div id="speedo" class="box"><span id="gear">N</span><div><b id="spd">0</b><small>KMH</small><div id="nitro"><i></i></div><div id="rpmB" hidden><i></i></div></div></div>
   <canvas id="map" width="170" height="170"></canvas>
   <div id="touch">
     <button data-k="ArrowLeft" style="left:16px;bottom:24px">◀</button>
@@ -309,6 +314,6 @@
   </div>
 </div>
 
-<script type="module" src="game.js?v=1794841142"></script>
+<script type="module" src="game.js?v=1794842107"></script>
 </body>
 </html>
