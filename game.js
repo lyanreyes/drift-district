@@ -32,11 +32,24 @@ const TEAMS = [
   { name: 'Hass', c1: '#f4f4f4', c2: '#e10600' },
   { name: 'Racing Bills', c1: '#1634cb', c2: '#f4f4f4' },
 ];
+const TEAM_C3 = ['#ffffff', '#ffcc00', '#101216', '#35a7ff', '#f4f4f4', '#ffffff', '#e10600', '#f4f4f4', '#101216', '#e10600'];
+const DECALS = {};
+function decalMat(txt, fg) {
+  const key = txt + fg;
+  if (!DECALS[key]) {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 96; const x = c.getContext('2d');
+    x.fillStyle = fg; x.font = 'italic 900 66px "Titillium Web", Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, 256, 52, 496);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    DECALS[key] = new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  }
+  return DECALS[key];
+}
 const MODES = {
   city: { name: 'Neon City', laps: 2 },
   rally: { name: 'Forest Stage', laps: 3 },
   dunes: { name: 'Desert Dunes', laps: 3 },
   monster: { name: 'Monster Arena', laps: 3 },
+  trail: { name: 'Rock Trail', laps: 2 },
   gp: { name: 'Austria Ring', laps: 10 },
   gp2: { name: 'São Paulo Circuit', laps: 10 },
   gp3: { name: 'Monte Carlo Streets', laps: 10 },
@@ -53,8 +66,8 @@ const MC_PTS = [[-120, -20], [-30, -20], [30, -5], [70, -45], [120, -120], [170,
 const isGP = m => m.startsWith('gp');
 const CATS = {
   f1: { name: 'Formula', maps: ['gp', 'gp2', 'gp3', 'gp4', 'gp5'], cars: ['sabre'] },
-  rally: { name: 'Rally', maps: ['rally', 'dunes'], cars: ['rally', 'pickup'] },
-  monster: { name: 'Monster Truck', maps: ['monster', 'dunes'], cars: ['monster'] },
+  rally: { name: 'Rally', maps: ['rally', 'dunes', 'trail'], cars: ['rally', 'pickup'] },
+  monster: { name: 'Monster Truck', maps: ['monster', 'dunes', 'trail'], cars: ['monster'] },
   street: { name: 'Street', maps: ['city'], cars: ['vento', 'kaiju', 'brute'] },
   drift: { name: 'Drift', maps: ['drift'], cars: ['kaiju', 'vento', 'brute'] },
 };
@@ -185,6 +198,7 @@ function buildFormula(g, paint, trim, dark, tail) {
   const mkWheel = (x, z, R, w) => {
     const grp = new THREE.Group(), spin = new THREE.Group(); spin.rotation.z = Math.PI / 2;
     spin.add(new THREE.Mesh(tyreGeo(R, w), rubber), new THREE.Mesh(new THREE.CylinderGeometry(.21, .21, w * .94, 22), metal));
+    for (const sd of [-1, 1]) { const cap = new THREE.Mesh(new THREE.CircleGeometry(.215, 20), WM.rim); cap.rotation.x = -sd * Math.PI / 2; cap.position.y = sd * (w * .47 + .004); spin.add(cap); }
     for (const sd of [-1, 1]) { const t = new THREE.Mesh(new THREE.TorusGeometry(R - .085, .012, 6, 30), stripe); t.rotation.x = Math.PI / 2; t.position.y = sd * (w / 2 + .003); spin.add(t); }
     grp.add(spin); grp.position.set(x, R, z); grp.rotation.order = 'YXZ'; g.add(grp); (g.userData.wheels = g.userData.wheels || []).push({ grp, R, front: z > 0 }); return grp;
   };
@@ -197,6 +211,24 @@ function buildFormula(g, paint, trim, dark, tail) {
     arm([sd * .14, .46, -1.35], [sd * .58, .44, -1.65]); arm([sd * .1, .46, -1.95], [sd * .58, .44, -1.65]);
     arm([sd * .14, .28, -1.35], [sd * .58, .26, -1.65]); arm([sd * .1, .3, -1.95], [sd * .58, .26, -1.65]);
   }
+  // livery: third colour accents, team name and number, extra aero parts
+  const lv = g.userData.livery || { label: 'DRIFT DISTRICT', c3: '#ffffff', num: 7 }, c3 = new THREE.MeshPhysicalMaterial({ color: lv.c3, metalness: .15, roughness: .35, clearcoat: .6, envMapIntensity: .4 });
+  const decal = (txt, w, h, x, y, z, rx, ry, fg = '#ffffff') => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), decalMat(txt, fg)); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); m.userData.noShadow = true; g.add(m); };
+  for (const sd of [-1, 1]) {
+    decal(lv.label, 1.25, .23, sd * .802, .43, -.12, 0, sd * Math.PI / 2);
+    decal(String(lv.num), .34, .2, sd * .016, .86, -1.25, 0, sd * Math.PI / 2);
+    decal(lv.label, .56, .1, sd * .54, .88, -2.28, 0, sd * Math.PI / 2);
+    box(.032, .07, .52, c3, sd * .945, .32, 2.52); box(.034, .1, .62, c3, sd * .52, .46, -2.28);
+    box(.02, .2, .5, carbon, sd * .62, .3, .98, 0, sd * .25, 0); box(.02, .14, .4, c3, sd * .7, .26, 1.02, 0, sd * .32, 0);
+    box(.06, .03, 2.6, c3, sd * .76, .135, -.4);
+    box(.12, .2, .2, carbon, sd * .66, .36, 1.75); box(.14, .22, .22, carbon, sd * .55, .36, -1.65);
+    box(.03, .1, .5, carbon, sd * .3, .14, -2.1, .35, 0, 0);
+  }
+  decal(String(lv.num), .28, .2, 0, .56, 1.45, -Math.PI / 2, 0);
+  decal(lv.label, .92, .15, 0, .99, -2.535, 0, Math.PI);
+  decal(lv.label, 1.3, .13, 0, .132, 2.62, -Math.PI / 2, 0);
+  g.add(loft([[2.8, .054, .044, .29], [2.52, .1, .069, .326]], c3, 12));
+  box(.2, .05, .22, c3, 0, .915, .02); box(.012, .2, .012, carbon, 0, .62, 1.25); box(.05, .05, .12, c3, 0, .5, -2.3);
   return fw;
 }
 function wheelMesh(R, w, tread) {
@@ -210,6 +242,8 @@ function wheelMesh(R, w, tread) {
 function spinWheels(mesh, v, steer, dt) { const ws = mesh && mesh.userData.wheels; if (!ws) return; for (const w of ws) { w.grp.rotation.x += v / w.R * dt; if (w.front) w.grp.rotation.y = steer * .32; } }
 function buildCar(spec, color, color2 = color) {
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
+  const tmI = TEAMS.findIndex(t => t.c1 === color && t.c2 === color2);
+  g.userData.livery = { label: tmI >= 0 ? TEAMS[tmI].name.toUpperCase() : 'DRIFT DISTRICT', c3: tmI >= 0 ? TEAM_C3[tmI] : color2, num: parseInt(String(color).slice(1), 16) % 98 + 1 };
   const paint = new THREE.MeshPhysicalMaterial({ color, metalness: .15, roughness: .35, clearcoat: .6, clearcoatRoughness: .1, envMapIntensity: .4 });
   const trim = new THREE.MeshPhysicalMaterial({ color: color2, metalness: .15, roughness: .35, clearcoat: .6, clearcoatRoughness: .1, envMapIntensity: .4 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x14161a, roughness: .7 });
@@ -232,7 +266,21 @@ function buildCar(spec, color, color2 = color) {
       for (const sx of [-1, 1]) { box(.14, .14, 4.4, dark, sx * .45, 1.3, 0); box(.1, .95, .1, trim, sx * .82, lift + 1.1, -.8); }
       box(1.74, .1, .1, trim, 0, lift + 1.58, -.8);
       for (const sz of [-1, 1]) { box(2.3, .24, .24, dark, 0, R, sz * 1.75); for (const sx of [-1, 1]) { link([sx * .45, 1.3, sz * .35], [sx * .78, R, sz * 1.75]); link([sx * .6, lift + .12, sz * 1.45], [sx * .95, R + .12, sz * 1.75], trim, .16); } }
-    } else { box(1.7, .09, .09, dark, 0, lift + .52, 2.66); for (const sx of [-1, 1]) box(.09, .5, .09, dark, sx * .85, lift + .92, -.72); box(1.79, .09, .09, dark, 0, lift + 1.17, -.72); }
+    } else {
+      // bull bar with hoops, spotlights and winch
+      box(2.0, .12, .12, dark, 0, lift + .26, 2.74); box(1.5, .08, .08, dark, 0, lift + .66, 2.74);
+      for (const sx of [-1, 1]) { box(.09, .5, .09, dark, sx * .62, lift + .45, 2.74); box(.09, .3, .09, dark, sx * .95, lift + .36, 2.7, 0, 0, sx * .5); }
+      for (const sx of [-1, 1]) { const sl = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, .1, 14), head); sl.rotation.x = Math.PI / 2; sl.position.set(sx * .3, lift + .78, 2.78); g.add(sl); const rg = new THREE.Mesh(new THREE.CylinderGeometry(.17, .17, .08, 14), dark); rg.rotation.x = Math.PI / 2; rg.position.set(sx * .3, lift + .78, 2.74); g.add(rg); }
+      box(.42, .15, .18, dark, 0, lift + .14, 2.72); box(.08, .1, .06, trim, 0, lift + .1, 2.84);
+      // snorkel, roof rack with light bar and recovery boards
+      box(.09, .95, .09, dark, -1.03, lift + .95, 1.0); box(.13, .15, .22, dark, -1.03, lift + 1.47, 1.04);
+      box(1.56, .05, 1.5, dark, 0, lift + 1.4, .12); for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(.05, .1, .05, dark, sx * .72, lift + 1.34, .12 + sz * .65);
+      box(1.2, .09, .1, head, 0, lift + 1.47, .84); for (const sx of [-1, 1]) box(.06, .3, 1.05, trim, sx * .74, lift + 1.56, .05);
+      // canopy over the tray, flares, side steps, spare wheel
+      box(1.86, .52, 1.85, paint, 0, lift + .93, -1.5); box(1.88, .22, 1.3, glass, 0, lift + .99, -1.5); box(1.5, .05, 1.6, dark, 0, lift + 1.21, -1.5);
+      for (const sx of [-1, 1]) { for (const sz of [-1, 1]) box(.26, .1, 1.2, dark, sx * 1.04, lift + .1, sz * 1.75); box(.22, .06, 1.7, dark, sx * 1.06, lift - .14, 0); box(.05, .2, .06, dark, sx * .9, lift + .2, -2.66); }
+      const spw = wheelMesh(.5, .3, true); spw.rotation.y = Math.PI / 2; spw.position.set(0, lift + .52, -2.78); g.add(spw);
+    }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) wheel(sx * (W + (big ? .48 : .02)), sz * 1.75, R, big ? .95 : .44, true);
   } else {
     const L = t === 'muscle' ? 4.8 : t === 'rally' ? 4.1 : 4.4, hL = L / 2, W = .95, low = t === 'sport';
@@ -253,7 +301,7 @@ function buildCar(spec, color, color2 = color) {
     const R = t === 'rally' ? .37 : .35;
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) wheel(sx * (W - .1), sz * L * .31, R, .3, t === 'rally');
   }
-  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  g.traverse(o => { if (o.isMesh && !o.userData.noShadow) o.castShadow = true; });
   return g;
 }
 function makeTag(name) {
@@ -421,6 +469,7 @@ const SKIES = {
   rally: { top: 0x4a86c8, hor: 0xe8d9b8, sunCol: 0xffe2b0, sunDir: [-.5, .55, .4], cloud: .6, fog: [300, 1500], ground: 'grass', tint: 0xd9cf88, hemi: [0xfff0d8, 0x6a5a3a, .7], sunI: 2.6 },
   arena: { top: 0x18214e, hor: 0xe08a55, sunCol: 0xfff0d0, sunDir: [.3, .8, .4], cloud: .5, fog: [300, 1400], ground: 'sand', tint: 0xb99a6c, hemi: [0xffe0c0, 0x554433, 1.0], sunI: 2.3 },
   desert: { top: 0x2f7fe0, hor: 0xf3dfb8, sunCol: 0xfff1c8, sunDir: [.6, .7, .2], cloud: .25, fog: [350, 1700], ground: 'sand', tint: 0xffffff, hemi: [0xfff3d8, 0x8a6a3a, .75], sunI: 3.0 },
+  trail: { top: 0x5f86b8, hor: 0xdfe6ee, sunCol: 0xfff6e6, sunDir: [-.4, .7, .5], cloud: 1, fog: [300, 1500], ground: 'sand', tint: 0x8f9299, hemi: [0xe6eefc, 0x5a5a60, .8], sunI: 2.4 },
   drift: { top: 0x38468a, hor: 0xf5a56c, sunCol: 0xffb070, sunDir: [-.7, .25, .4], cloud: .7, fog: [250, 1400], ground: 'asphalt', tint: 0x55555e, hemi: [0xffc9a0, 0x332233, .6], sunI: 2.4 },
 };
 function trackWorld(kind) {
@@ -628,21 +677,22 @@ function trackWorld(kind) {
   };
 }
 
+const TRAIL_PTS = [[0, -250], [120, -235], [220, -160], [250, -40], [190, 60], [240, 170], [150, 250], [20, 220], [-90, 255], [-200, 200], [-250, 90], [-190, -10], [-255, -110], [-170, -210], [-80, -200]];
 const DUNE_PTS = [[0, -260], [150, -250], [270, -180], [300, -60], [230, 40], [280, 150], [200, 250], [70, 230], [-30, 280], [-160, 240], [-260, 170], [-220, 60], [-290, -40], [-250, -150], [-140, -200], [-90, -270]];
 function terrainWorld(kind) {
-  const arena = kind === 'monster', forest = kind === 'rally', R = rng(arena ? 5 : forest ? 13 : 9), B = arena ? 135 : 390, width = 14;
-  const g = baseWorld(SKIES[arena ? 'arena' : forest ? 'rally' : 'desert']), dummy = new THREE.Object3D();
+  const arena = kind === 'monster', trail = kind === 'trail', forest = kind === 'rally' || trail, R = rng(arena ? 5 : trail ? 21 : forest ? 13 : 9), B = arena ? 135 : 390, width = 14;
+  const g = baseWorld(SKIES[arena ? 'arena' : trail ? 'trail' : forest ? 'rally' : 'desert']), dummy = new THREE.Object3D();
   let sp = [], N = 0;
   // bumps: [x, z, radiusX, radiusZ, height, flatTop]
   const bumps = arena ? [[0, -50, 13, 22, 3.4, 0], [-20, 50, 9, 20, 2.6, 0], [20, 50, 9, 20, 2.6, 0], [0, 0, 17, 17, 4.6, 0], [-55, 0, 7, 13, 1.3, 1], [60, 2, 10, 10, 2.2, 0]] : [];
   if (!arena) {
-    const curve = new THREE.CatmullRomCurve3((forest ? RALLY_PTS : DUNE_PTS).map(p => new THREE.Vector3(p[0], 0, p[1])), true, 'centripetal');
+    const curve = new THREE.CatmullRomCurve3((trail ? TRAIL_PTS : forest ? RALLY_PTS : DUNE_PTS).map(p => new THREE.Vector3(p[0], 0, p[1])), true, 'centripetal');
     N = Math.round(curve.getLength() / 3); sp = curve.getSpacedPoints(N); sp.pop();
     for (const fr of [.14, .38, .6, .84]) { const p = sp[Math.round(N * fr)]; bumps.push([p.x, p.z, 11, 11, 2.8, 0]); }
   }
   const tan = i => { const p = sp[(i + N) % N], q = sp[(i + 1 + N) % N]; const l = Math.hypot(q.x - p.x, q.z - p.z); return [(q.x - p.x) / l, (q.z - p.z) / l]; };
   const distTo = (x, z) => { let m = 1e12; for (const p of sp) { const d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < m) m = d; } return Math.sqrt(m); };
-  const dune = forest ? (x, z) => 7.5 * (Math.sin(x * .016 + 2) * Math.cos(z * .019) + 1) + 2.4 * (Math.sin(x * .05 + z * .031) + 1) : (x, z) => 5 * (Math.sin(x * .021 + 1) * Math.cos(z * .017) + 1) + 2.2 * (Math.sin(x * .047 + z * .039) + 1);
+  const dune = trail ? (x, z) => 13 * (Math.sin(x * .013 + .5) * Math.cos(z * .015) + 1) + 4 * (Math.sin(x * .045 + z * .04) + 1) + 1.2 * Math.sin(x * .13) * Math.sin(z * .11) + 1.2 : forest ? (x, z) => 7.5 * (Math.sin(x * .016 + 2) * Math.cos(z * .019) + 1) + 2.4 * (Math.sin(x * .05 + z * .031) + 1) : (x, z) => 5 * (Math.sin(x * .021 + 1) * Math.cos(z * .017) + 1) + 2.2 * (Math.sin(x * .047 + z * .039) + 1);
   const height = (x, z) => {
     let h = 0;
     if (!arena) { const f = clamp((480 - Math.hypot(x, z)) / 90, 0, 1); h = dune(x, z) * f * f * (3 - 2 * f); }
@@ -653,12 +703,12 @@ function terrainWorld(kind) {
   const S = arena ? 300 : 1040, seg = arena ? 150 : 208, geo = new THREE.PlaneGeometry(S, S, seg, seg).rotateX(-Math.PI / 2), pa = geo.attributes.position, uv = geo.attributes.uv, col = new Float32Array(pa.count * 3);
   for (let i = 0; i < pa.count; i++) {
     const x = pa.getX(i), z = pa.getZ(i), h = height(x, z); pa.setY(i, h);
-    const k = arena ? .8 + Math.min(.2, h * .05) : 1; let r = 1, gg = arena ? .92 : 1, b = arena ? .8 : 1;
-    if (!arena && Math.abs(x) < 410 && Math.abs(z) < 410 && distTo(x, z) < width / 2) { if (forest) { r = 4.4; gg = .7; b = 2.0; } else { r = .66; gg = .54; b = .42; } }
+    const k = arena ? .8 + Math.min(.2, h * .05) : 1; let r = 1, gg = arena ? .92 : 1, b = arena ? .8 : 1; if (trail) { r = .62; gg = .64; b = .7; }
+    if (!arena && Math.abs(x) < 410 && Math.abs(z) < 410 && distTo(x, z) < width / 2) { if (trail) { r = .42; gg = .42; b = .46; } else if (forest) { r = 4.4; gg = .7; b = 2.0; } else { r = .66; gg = .54; b = .42; } }
     col[i * 3] = r * k; col[i * 3 + 1] = gg * k; col[i * 3 + 2] = b * k; uv.setXY(i, uv.getX(i) * S / 22, uv.getY(i) * S / 22);
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-  const ter = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: forest ? TEX.grass : TEX.sand, vertexColors: true, roughness: 1, metalness: 0 })); ter.receiveShadow = true; ter.material.userData.r = 1; ROADMATS.push(ter.material); g.add(ter);
+  const ter = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: forest && !trail ? TEX.grass : TEX.sand, vertexColors: true, roughness: 1, metalness: 0 })); ter.receiveShadow = true; ter.material.userData.r = 1; ROADMATS.push(ter.material); g.add(ter);
   let cps, spawn, drawMap, contain = null;
   if (arena) {
     const A = 122, Bz = 82, ct = TEX.crowd.clone(); ct.wrapS = THREE.RepeatWrapping; ct.repeat.set(22, 1); ct.needsUpdate = true;
@@ -682,19 +732,19 @@ function terrainWorld(kind) {
     contain = m => { const e = Math.hypot(m.x / (A - 4), m.z / (Bz - 4)); if (e <= 1) return 0; let nx = m.x / (A * A), nz = m.z / (Bz * Bz); const l = Math.hypot(nx, nz); nx /= l; nz /= l; m.x /= e; m.z /= e; const vn = m.vx * nx + m.vz * nz; if (vn > 0) { m.vx -= 1.4 * vn * nx; m.vz -= 1.4 * vn * nz; } return vn; };
   } else {
     // rocks, cacti, route posts, mesas
-    const RN = forest ? 40 : 110, VN = forest ? 430 : 80;
+    const RN = trail ? 240 : forest ? 40 : 110, VN = trail ? 150 : forest ? 430 : 80;
     const rk = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: forest ? 0x7d8088 : 0x9a7a5c, flatShading: true }), RN);
     const ca = new THREE.InstancedMesh(forest ? PINE : new THREE.CylinderGeometry(.38, .45, 4, 7), new THREE.MeshLambertMaterial({ color: forest ? 0x2c8a3e : 0x3f7d3a, vertexColors: forest, side: THREE.DoubleSide }), VN);
     let n = 0, m2 = 0, guard = 0;
     while ((n < RN || m2 < VN) && guard++ < 9000) { let x = (R() * 2 - 1) * 430, z = (R() * 2 - 1) * 430; if (forest && R() < .75) { const q = sp[R() * N | 0], a = R() * TAU, rr = 10 + R() * 55; x = q.x + Math.cos(a) * rr; z = q.z + Math.sin(a) * rr; } if (distTo(x, z) < width / 2 + 4) continue; const y = height(x, z);
-      if (n < RN && R() < (forest ? .08 : .6)) { const sc = .8 + R() * 2.6; dummy.position.set(x, y + sc * .3, z); dummy.scale.set(sc * (1 + R()), sc, sc * (1 + R())); dummy.rotation.set(R(), R() * 6, 0); dummy.updateMatrix(); rk.setMatrixAt(n++, dummy.matrix); }
+      if (n < RN && R() < (forest && !trail ? .08 : .6)) { const sc = .8 + R() * 2.6; dummy.position.set(x, y + sc * .3, z); dummy.scale.set(sc * (1 + R()), sc, sc * (1 + R())); dummy.rotation.set(R(), R() * 6, 0); dummy.updateMatrix(); rk.setMatrixAt(n++, dummy.matrix); }
       else if (m2 < VN) { const vs = .7 + R() * .9; if (forest) { dummy.position.set(x, y + 9.3 * vs, z); dummy.scale.set(vs, vs, vs); } else { dummy.position.set(x, y + 2, z); dummy.scale.set(1, .6 + R() * .9, 1); } dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); ca.setMatrixAt(m2++, dummy.matrix); } }
     rk.count = n; ca.count = m2; dummy.scale.set(1, 1, 1); dummy.rotation.set(0, 0, 0); rk.castShadow = ca.castShadow = true; g.add(rk, ca);
     const posts = []; for (let i = 0; i < N; i += 7) posts.push(i);
     const pm = new THREE.InstancedMesh(new THREE.BoxGeometry(.25, 1.8, .25), new THREE.MeshBasicMaterial({ color: 0xffffff }), posts.length * 2), pc = new THREE.Color();
     posts.forEach((idx, k) => [1, -1].forEach((sd, q) => { const [x, z] = ribEdge(sp, idx, sd * (width / 2 + .8)); dummy.position.set(x, height(x, z) + .9, z); dummy.updateMatrix(); pm.setMatrixAt(k * 2 + q, dummy.matrix); pm.setColorAt(k * 2 + q, pc.set(sd > 0 ? 0xe10600 : 0xffffff)); }));
     g.add(pm);
-    const mesa = new THREE.MeshLambertMaterial({ color: forest ? 0x3f6d44 : 0xb5744a, flatShading: !forest });
+    const mesa = new THREE.MeshLambertMaterial({ color: trail ? 0x8a8f98 : forest ? 0x3f6d44 : 0xb5744a, flatShading: !forest || trail });
     for (let i = 0; i < 11; i++) { const a = i / 11 * TAU + R(), r = 880 + R() * 260, hh = 60 + R() * 110, mm = new THREE.Mesh(new THREE.CylinderGeometry(90 + R() * 90, 130 + R() * 120, hh, 8), mesa); mm.position.set(Math.cos(a) * r, hh / 2 - 4, Math.sin(a) * r); mm.rotation.y = R() * 3;
       if (forest) { mm.geometry = new THREE.SphereGeometry(1, 20, 12); mm.scale.set(300 + R() * 220, hh * 1.5, 300 + R() * 220); mm.position.y = -14; }
       g.add(mm); }
@@ -768,7 +818,7 @@ function cityWorld() {
 /* ───────────────────────── state ───────────────────────── */
 const state = { screen: 'menu', mode: 'city', cat: 'f1', wet: false, wx: 'dry' };
 let world = null;
-const me = { y: 0, vy: 0, air: false, airT: 0, pitch: 0, cat: 'f1', pick: { f1: 'sabre', rally: 'rally', monster: 'monster', street: 'vento', drift: 'kaiju' }, penalty: 0, strikes: 0, offT: 0, offFlag: false, pitSpeed: false, penCd: 0, tyreWarn: false, compound: 'medium', nextComp: 'medium', dmg: 0, tyre: 1, pitT: 0, pitDone: false, pitMsg: '', shake: 0, crashCd: 0, wreckT: 0, name: 'Driver', spec: CARS[0], color: '#e63946', color2: '#e63946', last: null, mesh: null, x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, nitro: 1, cp: 0, lap: 0, passed: 0, prog: 0, score: 0, combo: 0, comboT: 0, lapStart: 0, best: null, drifting: false, boosting: false, rank: 1 };
+const me = { psi: 30, lowR: false, stuckT: 0, y: 0, vy: 0, air: false, airT: 0, pitch: 0, cat: 'f1', pick: { f1: 'sabre', rally: 'rally', monster: 'monster', street: 'vento', drift: 'kaiju' }, penalty: 0, strikes: 0, offT: 0, offFlag: false, pitSpeed: false, penCd: 0, tyreWarn: false, compound: 'medium', nextComp: 'medium', dmg: 0, tyre: 1, pitT: 0, pitDone: false, pitMsg: '', shake: 0, crashCd: 0, wreckT: 0, name: 'Driver', spec: CARS[0], color: '#e63946', color2: '#e63946', last: null, mesh: null, x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, nitro: 1, cp: 0, lap: 0, passed: 0, prog: 0, score: 0, combo: 0, comboT: 0, lapStart: 0, best: null, drifting: false, boosting: false, rank: 1 };
 const race = { phase: 'free', t0: 0, results: [] };
 const remotes = new Map();
 let menuCar = null; const previewPos = { x: 0, z: 0 };
@@ -823,6 +873,7 @@ function explode(x, z, color, vx = 0, vz = 0) {
   for (let i = 0; i < 30; i++) puff(x + (Math.random() - .5) * 4, z + (Math.random() - .5) * 4);
   crashSound(.5);
 }
+const winchLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), new THREE.LineBasicMaterial({ color: 0x111111 })); winchLine.frustumCulled = false; winchLine.visible = false; scene.add(winchLine);
 function driftFx(x, z, h, vh) { const s = Math.sin(h), c = Math.cos(h); for (const o of [-.9, .9]) { const wx = x - s * 1.4 + c * o, wz = z - c * 1.4 - s * o; if (!world.height) addSkid(wx, wz, vh); if (Math.random() < .5) puff(wx, wz); } }
 function updateFx(dt) {
   fxTick++;
@@ -891,6 +942,10 @@ addEventListener('keydown', e => {
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
   if (e.code === 'KeyR') respawn();
   if (e.code === 'KeyC') toggleCam();
+  if (me.spec.off) {
+    if (e.code === 'BracketLeft' || e.code === 'BracketRight') { me.psi = clamp(me.psi + (e.code === 'BracketLeft' ? -2 : 2), 12, 36); toast('Tyre pressure ' + me.psi + ' PSI — ' + (me.psi <= 18 ? 'max grip off-road, slower' : me.psi >= 32 ? 'fast on hard ground, less grip off-road' : 'balanced')); }
+    if (e.code === 'KeyL') { me.lowR = !me.lowR; toast(me.lowR ? 'Low range (4L): strong pull for climbing, max 47 km/h' : 'High range (4H)'); }
+  }
   if (e.code === 'Escape') $('settings').hidden = !$('settings').hidden;
   const ty = { Digit1: 'soft', Digit2: 'medium', Digit3: 'hard', Digit4: 'wet' }[e.code]; if (ty && isGP(state.mode)) pickTyre(ty);
   if (e.code === 'Enter') requestStart();
@@ -1021,7 +1076,7 @@ function stepCar(dt, now) {
   const onRoad = world.onRoad(me.x, me.z);
   const boost = !locked && K('ShiftLeft', 'ShiftRight') && me.nitro > 0.02 && thr > 0;
   me.boosting = boost;
-  const max = s.max * (boost ? 1.22 : 1) * (onRoad ? 1 : (s.off ? .85 : .42)) * (1 - .35 * me.dmg), acc = s.acc * (boost ? 1.9 : 1);
+  let max = s.max * (boost ? 1.22 : 1) * (onRoad ? 1 : (s.off ? .85 : .42)) * (1 - .35 * me.dmg), acc = s.acc * (boost ? 1.9 : 1);
 
   // longitudinal
   let sin = Math.sin(me.h), cos = Math.cos(me.h);
@@ -1029,6 +1084,17 @@ function stepCar(dt, now) {
   if (me.air) { } else if (thr > 0) { if (vf < 0) vf += 40 * dt; else if (vf < max) vf += acc * dt * (1 - (vf / max) ** 2); }
   else if (thr < 0) { if (vf > 1) vf -= 48 * (state.wet ? .72 : 1) * dt; else if (vf > -20) vf -= acc * .6 * dt; }
   else vf -= Math.sign(vf) * Math.min(Math.abs(vf), 3 * dt);
+  // hills: gravity along the slope, and tyres that can spin out on steep climbs
+  let slope = 0, trac = 1;
+  if (world.height) { const sn0 = Math.sin(me.h), cs0 = Math.cos(me.h); slope = (world.height(me.x + sn0 * 1.5, me.z + cs0 * 1.5) - world.height(me.x - sn0 * 1.5, me.z - cs0 * 1.5)) / 3; }
+  if (s.off) { const pf = (36 - me.psi) / 24; trac = (world.loose ? .75 + pf * .5 : 1 - pf * .12) * (me.lowR ? 1.5 : 1); if (vf > max * (1 - pf * .28)) vf -= (vf - max * (1 - pf * .28)) * 2 * dt; if (me.lowR && vf > 13) vf -= (vf - 13) * 4 * dt; }
+  if (world.height && !me.air) {
+    vf -= 9.8 * slope / Math.sqrt(1 + slope * slope) * dt;
+    const have = (s.big ? .55 : s.off ? .34 : .2) * trac;
+    if (thr > 0 && slope > have && vf > -1) { vf -= (slope - have) * 60 * dt; if (Math.random() < .3) puff(me.x - Math.sin(me.h) * 2, me.z - Math.cos(me.h) * 2); me.stuckT += dt; if (me.stuckT > 1.4) { me.stuckT = -6; toast(s.off ? 'Wheels spinning! Air down [ , low range L, or winch E' : 'Too steep for this car'); } }
+    else if (me.stuckT > 0) me.stuckT = 0; else if (me.stuckT < 0) me.stuckT = Math.min(0, me.stuckT + dt);
+    if (me.lowR && thr > 0 && vf < 13) vf += s.acc * .7 * dt;
+  }
   vf -= vf * .08 * dt;
   if (vf > max) vf -= (vf - max) * 2.2 * dt;
   if (hb) vf -= vf * .45 * dt;
@@ -1052,6 +1118,13 @@ function stepCar(dt, now) {
   me.vx = sin * vf + cos * vl; me.vz = cos * vf - sin * vl; me.vl = vl;
 
   me.x += me.vx * dt; me.z += me.vz * dt;
+  const winching = !!s.off && K('KeyE') && !me.air && !locked && Math.hypot(me.vx, me.vz) < 6;
+  if (winching) {
+    const c0 = world.cps[me.cp], wx = c0.x - me.x, wz = c0.z - me.z, wl = Math.hypot(wx, wz) || 1, gy = world.height || (() => 0), ax = me.x + wx / wl * 16, az = me.z + wz / wl * 16;
+    me.x += wx / wl * 3.4 * dt; me.z += wz / wl * 3.4 * dt; me.h += angDiff(Math.atan2(wx, wz), me.h) * Math.min(1, dt * 1.5); me.vx *= .85; me.vz *= .85;
+    winchLine.geometry.setFromPoints([new THREE.Vector3(me.x, me.y + .9, me.z), new THREE.Vector3(ax, gy(ax, az) + .3, az)]);
+  }
+  winchLine.visible = winching;
 
   // collisions: buildings, world edge, other cars
   let hit = false, impact = 0; const CR = s.big ? 2.3 : 1.5;
@@ -1381,7 +1454,7 @@ function fastUI(now) {
   $('score').textContent = me.score;
   $('tyreBar').style.width = (me.tyre * 100) + '%'; $('tyreBar').style.background = me.tyre > .5 ? '#3dff7a' : me.tyre > .25 ? '#ffd23f' : '#e10600';
   $('dmgBar').style.width = (me.dmg * 100) + '%'; $('pen').textContent = me.penalty ? '+' + me.penalty + 's' : '—';
-  $('tyreLbl').textContent = isGP(state.mode) ? TYRES[me.compound].name.toUpperCase() + (me.nextComp !== me.compound ? ' > ' + TYRES[me.nextComp].name[0] : '') : 'TYRES';
+  $('tyreLbl').textContent = isGP(state.mode) ? TYRES[me.compound].name.toUpperCase() + (me.nextComp !== me.compound ? ' > ' + TYRES[me.nextComp].name[0] : '') : me.spec.off ? me.psi + ' PSI · ' + (me.lowR ? '4L' : '4H') : 'TYRES';
   const tcol = TYRES[me.compound].col; if (me.mesh.userData.stripe) me.mesh.userData.stripe.color.setHex(tcol); if (cock && cock.stripe) cock.stripe.color.setHex(tcol);
   $('combo').textContent = me.combo > 5 ? '+' + Math.round(me.combo) : '';
   const md = MODES[state.mode];
@@ -1422,7 +1495,7 @@ function fitCar() {
 }
 function setMode(mode) {
   if (world) { scene.remove(world.group); world.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
-  state.mode = mode; world = mode === 'city' ? cityWorld() : (mode === 'monster' || mode === 'dunes' || mode === 'rally') ? terrainWorld(mode) : trackWorld(mode); scene.add(world.group);
+  state.mode = mode; world = mode === 'city' ? cityWorld() : (mode === 'monster' || mode === 'dunes' || mode === 'rally' || mode === 'trail') ? terrainWorld(mode) : trackWorld(mode); scene.add(world.group);
   const c = mapBg.getContext('2d'); c.clearRect(0, 0, 170, 170); world.drawMap(c, M);
   applyWeather(); if (state.screen === 'play') fitCar();
   clearSkids(); race.phase = 'free'; race.results = []; race.msgUntil = 0; $('results').hidden = true;
@@ -1484,7 +1557,7 @@ let menuMode = 'gp';
 function mapOutline(m) {
   if (m === 'city') return [[-160, -240], [0, -240], [160, -240], [160, -80], [0, -80], [0, 80], [120, 80], [240, 80], [240, 240], [0, 240], [-240, 240], [-240, 0], [-160, 0], [-160, -120]];
   if (m === 'monster') return Array.from({ length: 48 }, (_, k) => [Math.cos(k / 48 * TAU) * 122, Math.sin(k / 48 * TAU) * 82]);
-  const pts = m === 'dunes' ? DUNE_PTS : TRACKS[m].pts;
+  const pts = m === 'dunes' ? DUNE_PTS : m === 'trail' ? TRAIL_PTS : TRACKS[m].pts;
   return new THREE.CatmullRomCurve3(pts.map(q => new THREE.Vector3(q[0], 0, q[1])), true, 'centripetal').getPoints(240).map(v => [v.x, v.z]);
 }
 function drawMini(m) {
