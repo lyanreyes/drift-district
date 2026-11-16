@@ -919,7 +919,7 @@ function cityWorld() {
 /* ───────────────────────── state ───────────────────────── */
 const state = { screen: 'menu', mode: 'city', cat: 'f1', wet: false, wx: 'dry' };
 let world = null;
-const me = { psi: 30, lowR: false, stuckT: 0, y: 0, vy: 0, air: false, airT: 0, pitch: 0, cat: 'f1', pick: { f1: 'sabre', rally: 'rally', monster: 'monster', street: 'vento', drift: 'kaiju', touge: 'panda' }, penalty: 0, strikes: 0, offT: 0, offFlag: false, pitSpeed: false, penCd: 0, tyreWarn: false, compound: 'medium', nextComp: 'medium', dmg: 0, tyre: 1, pitT: 0, pitDone: false, pitMsg: '', shake: 0, crashCd: 0, wreckT: 0, name: 'Driver', spec: CARS[0], color: '#e63946', color2: '#e63946', last: null, mesh: null, x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, nitro: 1, cp: 0, lap: 0, passed: 0, prog: 0, score: 0, combo: 0, comboT: 0, lapStart: 0, best: null, drifting: false, boosting: false, rank: 1 };
+const me = { slide: 0, yaw: 0, prevThr: 0, psi: 30, lowR: false, stuckT: 0, y: 0, vy: 0, air: false, airT: 0, pitch: 0, cat: 'f1', pick: { f1: 'sabre', rally: 'rally', monster: 'monster', street: 'vento', drift: 'kaiju', touge: 'panda' }, penalty: 0, strikes: 0, offT: 0, offFlag: false, pitSpeed: false, penCd: 0, tyreWarn: false, compound: 'medium', nextComp: 'medium', dmg: 0, tyre: 1, pitT: 0, pitDone: false, pitMsg: '', shake: 0, crashCd: 0, wreckT: 0, name: 'Driver', spec: CARS[0], color: '#e63946', color2: '#e63946', last: null, mesh: null, x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, nitro: 1, cp: 0, lap: 0, passed: 0, prog: 0, score: 0, combo: 0, comboT: 0, lapStart: 0, best: null, drifting: false, boosting: false, rank: 1 };
 const race = { phase: 'free', t0: 0, results: [] };
 const remotes = new Map();
 let menuCar = null; const previewPos = { x: 0, z: 0 };
@@ -1188,7 +1188,7 @@ function stepCar(dt, now) {
   // longitudinal
   let sin = Math.sin(me.h), cos = Math.cos(me.h);
   let vf = me.vx * sin + me.vz * cos, vl = me.vx * cos - me.vz * sin;
-  if (me.air) { } else if (thr > 0) { if (vf < 0) vf += 40 * dt; else if (vf < max) vf += acc * dt * (1 - (vf / max) ** 2); }
+  if (me.air) { } else if (thr > 0) { if (vf < 0) vf += 40 * dt; else if (vf < max) vf += acc * (me.slide > .5 ? .22 : 1) * dt * (1 - (vf / max) ** 2); }
   else if (thr < 0) { if (vf > 1) vf -= 48 * (state.wet ? .72 : 1) * dt; else if (vf > -20) vf -= acc * .6 * dt; }
   else vf -= Math.sign(vf) * Math.min(Math.abs(vf), 3 * dt);
   // hills: gravity along the slope, and tyres that can spin out on steep climbs
@@ -1211,7 +1211,18 @@ function stepCar(dt, now) {
   me.steer += (steerIn - me.steer) * Math.min(1, dt * 9);
   const speed = Math.hypot(me.vx, me.vz);
   const sf = clamp(vf / 6, -1, 1), hs = 1 / (1 + speed / 55);
-  me.h += me.steer * s.steer * sf * hs * (hb ? 1.5 : 1) * (me.air ? .25 : 1) * dt;
+  // drift-style cars (street, drift, touge): a slide can be started with the handbrake, by braking into a corner,
+  // or by lifting off mid-corner; the car then rotates with some inertia and countersteer controls the angle
+  const dc = !s.off && s.type !== 'formula';
+  if (dc) {
+    const slipA = Math.atan2(Math.abs(vl), Math.abs(vf) + .001);
+    if (!me.air && speed > 13 && (hb || (Math.abs(me.steer) > .55 && (thr < 0 || (me.prevThr > 0 && thr <= 0))) || slipA > .3)) me.slide = 1;
+    else if (slipA < .1 || speed < 8) me.slide = Math.max(0, me.slide - dt * 3);
+    const tgt = me.steer * s.steer * sf * hs * (hb ? 1.5 : 1) * (me.slide > .5 ? 1.3 : 1) * (slipA > .95 ? .45 : 1);
+    me.yaw += (tgt - me.yaw) * Math.min(1, dt * (me.slide > .5 ? 6 : 14));
+    me.h += me.yaw * (me.air ? .25 : 1) * dt;
+  } else me.h += me.steer * s.steer * sf * hs * (hb ? 1.5 : 1) * (me.air ? .25 : 1) * dt;
+  me.prevThr = thr;
 
   // lateral grip (this is where the drift comes from)
   sin = Math.sin(me.h); cos = Math.cos(me.h);
@@ -1219,9 +1230,11 @@ function stepCar(dt, now) {
   const gpm = isGP(state.mode);
   const TY = TYRES[me.compound], wetGrip = gpm ? (state.wet ? TY.wet : TY.dry) : (state.wet ? .74 : 1);
   let grip = s.grip * (onRoad ? 1 : (s.off ? .92 : .6)) * (world.loose ? (s.off ? .8 : .5) : 1) * (.68 + .32 * me.tyre) * wetGrip;
-  if (hb) grip = 1.0; else if (Math.abs(vl) > 7) grip *= .45;
+  if (dc && me.slide > .5) grip = (thr > 0 ? 1.5 : 2.8) * (hb ? .6 : 1) * wetGrip; else if (hb) grip = 1.0; else if (Math.abs(vl) > 7) grip *= .45;
   if (me.air) grip = 0;
+  const sp0 = Math.hypot(vf, vl);
   vl *= Math.exp(-grip * dt);
+  if (dc && me.slide > .5 && thr > 0 && vf > 0) vf = Math.sqrt(Math.max(0, sp0 * sp0 - vl * vl)) * (1 - .16 * dt);   // carry most of the momentum through the drift
   me.vx = sin * vf + cos * vl; me.vz = cos * vf - sin * vl; me.vl = vl;
 
   me.x += me.vx * dt; me.z += me.vz * dt;
@@ -1379,7 +1392,8 @@ function updateCamera(dt) {
     camH = me.h;
     return;
   }
-  camH += angDiff(me.h, camH) * Math.min(1, dt * 4.5);
+  const fwd = me.vx * Math.sin(me.h) + me.vz * Math.cos(me.h), look = fwd > 6 ? me.h + angDiff(Math.atan2(me.vx, me.vz), me.h) * .55 : me.h;
+  camH += angDiff(look, camH) * Math.min(1, dt * 4.5);
   const sp = Math.hypot(me.vx, me.vz), dist = 8.5 + sp * .04 + (me.spec.big ? 4.5 : 0), hgt = 3.6 + sp * .012 + (me.spec.big ? 2.2 : 0);
   camera.position.set(me.x - Math.sin(camH) * dist, hgt + me.y, me.z - Math.cos(camH) * dist);
   if (world.height) camera.position.y = Math.max(camera.position.y, world.height(camera.position.x, camera.position.z) + 1.8);
@@ -1568,7 +1582,7 @@ function fastUI(now) {
   $('dmgBar').style.width = (me.dmg * 100) + '%'; $('pen').textContent = me.penalty ? '+' + me.penalty + 's' : '—';
   $('tyreLbl').textContent = isGP(state.mode) ? TYRES[me.compound].name.toUpperCase() + (me.nextComp !== me.compound ? ' > ' + TYRES[me.nextComp].name[0] : '') : me.spec.off ? me.psi + ' PSI · ' + (me.lowR ? '4L' : '4H') : 'TYRES';
   const tcol = TYRES[me.compound].col; if (me.mesh.userData.stripe) me.mesh.userData.stripe.color.setHex(tcol); if (cock && cock.stripe) cock.stripe.color.setHex(tcol);
-  $('combo').textContent = me.combo > 5 ? '+' + Math.round(me.combo) : '';
+  $('combo').textContent = me.combo > 5 ? (me.drifting ? Math.round(Math.atan2(Math.abs(me.vl || 0), spd) * 57.3) + '°   ' : '') + '+' + Math.round(me.combo) : '';
   const md = MODES[state.mode];
   if (state.mode === 'drift') {
     $('lapL').textContent = 'TIME LEFT';
