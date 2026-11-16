@@ -1201,7 +1201,7 @@ function stepCar(dt, now) {
   // longitudinal
   let sin = Math.sin(me.h), cos = Math.cos(me.h);
   let vf = me.vx * sin + me.vz * cos, vl = me.vx * cos - me.vz * sin;
-  if (me.air) { } else if (thr > 0) { if (vf < 0) vf += 40 * dt; else if (vf < max) vf += acc * (me.slide > .5 ? .6 : 1) * dt * (1 - (vf / max) ** 2); }
+  if (me.air) { } else if (thr > 0) { if (vf < 0) vf += 40 * dt; else if (vf < max) vf += acc * (me.slide > .5 ? .42 : 1) * dt * (1 - (vf / max) ** 2); }
   else if (thr < 0) { if (vf > 1) vf -= 48 * (state.wet ? .72 : 1) * dt; else if (vf > -20) vf -= acc * .6 * dt; }
   else vf -= Math.sign(vf) * Math.min(Math.abs(vf), 3 * dt);
   // hills: gravity along the slope, and tyres that can spin out on steep climbs
@@ -1231,7 +1231,11 @@ function stepCar(dt, now) {
     const slipA = Math.atan2(Math.abs(vl), Math.abs(vf) + .001);
     if (!me.air && speed > 13 && (hb || (Math.abs(me.steer) > .55 && (thr < 0 || (me.prevThr > 0 && thr <= 0))) || slipA > .3)) me.slide = 1;
     else if (slipA < .2 || speed < 8) me.slide = Math.max(0, me.slide - dt * 6);
-    const tgt = me.steer * s.steer * sf * hs * (hb ? 1.5 : 1) * (me.slide > .5 ? 1.3 : 1) * (slipA > .95 ? .45 : 1);
+    let tgt = me.steer * s.steer * sf * hs * (hb ? 1.2 : 1) * (me.slide > .5 ? 1.3 : 1);
+    // angle limiter: stop rotating deeper as the slide passes ~30 degrees, and pull the nose back if it goes beyond ~45
+    const deeper = -Math.sign(vl);
+    if (tgt * deeper > 0) tgt *= clamp(1 - (slipA - .5) / .4, 0, 1);
+    if (slipA > .78 && vf > 0) tgt -= deeper * (slipA - .78) * 5;
     me.yaw += (tgt - me.yaw) * Math.min(1, dt * (me.slide > .5 ? 12 : 22));
     me.h += me.yaw * (me.air ? .25 : 1) * dt;
   } else me.h += me.steer * s.steer * sf * hs * (hb ? 1.5 : 1) * (me.air ? .25 : 1) * dt;
@@ -1243,7 +1247,7 @@ function stepCar(dt, now) {
   const gpm = isGP(state.mode);
   const TY = TYRES[me.compound], wetGrip = gpm ? (state.wet ? TY.wet : TY.dry) : (state.wet ? .74 : 1);
   let grip = s.grip * (onRoad ? 1 : (s.off ? .92 : .6)) * (world.loose ? (s.off ? .8 : .5) : 1) * (.68 + .32 * me.tyre) * wetGrip;
-  if (dc && me.slide > .5) grip = (thr > 0 ? 2.2 : 4.6) * (hb ? .5 : 1) * wetGrip; else if (hb) grip = 1.0; else if (Math.abs(vl) > 7) grip *= .45;
+  if (dc && me.slide > .5) grip = ((thr > 0 ? 2.2 : 4.6) + (1 - Math.abs(me.steer)) * 3) * (hb ? .5 : 1) * wetGrip; else if (hb) grip = 1.0; else if (Math.abs(vl) > 7) grip *= .45;
   if (me.air) grip = 0;
   const sp0 = Math.hypot(vf, vl);
   vl *= Math.exp(-grip * dt);
