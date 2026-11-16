@@ -232,14 +232,14 @@
       <h2>Controls</h2>
       <div class="keys">
         <div><b>W A S D</b>or arrows — drive</div><div><b>Space</b>handbrake / drift</div><div><b>Shift</b>nitro boost</div>
-        <div><b>C</b>cockpit / chase camera</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div><div><b>Esc</b>settings</div><div><b>1 2 3 4</b>tyre choice</div>
+        <div><b>C</b>chase / cockpit / T-cam</div><div><b>R</b>respawn on track</div><div><b>Enter</b>start race (host)</div><div><b>M</b>mute sound</div><div><b>Esc</b>settings</div><div><b>1 2 3 4</b>tyre choice</div>
       </div>
       <p class="tips"><b style="color:#fff">Drifting:</b> in the street, drift and touge cars you can start a slide three ways: tap the handbrake, brake while turning in, or lift off the throttle mid-corner. Then get back on the throttle to hold the slide and keep your speed, and steer against it to control the angle. Lift off to straighten up.</p>
       <p class="tips"><b style="color:#fff">Street Drag:</b> a straight quarter mile for up to 8 cars, each in its own lane, no steering. Wait for all five lights to go out (the hold is random), then hit the throttle — going early is a jump start and costs a second. Shift up with <b style="color:#fff">E</b> or <b style="color:#fff">Space</b> when the rev bar turns green for a perfect shift; too early bogs the engine, too late hits the limiter. Shift for nitrous.</p>
       <p class="tips"><b style="color:#fff">Traffic, AI and dents:</b> the Tokyo Expressway (Street mode) is a wide night highway with ordinary cars to weave through — hitting one damages you. The host can add AI opponents on circuits, the expressway and the drag strip from the "AI cars" menu. Crashes now leave visible dents; a pit stop, respawn or new race repairs them.</p>
       <p class="tips"><b style="color:#fff">Tyres:</b> on the circuits pick Soft (fastest, wears out in about 3 laps), Medium (about 5 laps), Hard (slower, lasts most of a race) or Wet, with the round buttons or keys 1–4. Tyres only change at a pit stop: your choice goes on the next time you stop in a pit box. The one exception is the starting grid, where your choice is fitted during the countdown.</p>
       <p class="tips"><b style="color:#fff">Rain:</b> the host can set the weather to dry, rain or changeable. A wet track has much less grip and longer braking. On the three Grand Prix circuits, slick tyres are very slippery in the rain, so pit for wets — and pit again for slicks when it dries.</p>
-      <p class="tips"><b style="color:#fff">Pit stops:</b> on the Grand Prix circuits your tyres wear out and lose grip, and crashes damage the car and cost top speed. Drive into the pit lane on the inside of the main straight and stop in a yellow box for 2.5 seconds to get fresh tyres and repairs. A wrecked car is put back on track after a short delay.</p>
+      <p class="tips"><b style="color:#fff">Pit stops:</b> on the Grand Prix circuits your tyres wear out and lose grip, and crashes damage the car and cost top speed. Drive into the pit lane on the inside of the main straight and stop in a yellow box for 1 second to get fresh tyres and repairs. A wrecked car is put back on track after a short delay.</p>
       <p class="tips"><b style="color:#fff">Penalties:</b> circuit races are 10 laps. Running off the track at speed gives a warning, and the third one is a 5-second penalty. Ramming another car from behind also costs 5 seconds. The pit lane has an automatic 100 km/h limiter. Penalties are added to your finish time.</p>
       <p class="tips"><b style="color:#fff">4x4 controls:</b> in the rally car, pickup and monster truck, press <b style="color:#fff">[</b> and <b style="color:#fff">]</b> to lower or raise tyre pressure (12–36 PSI). Low pressure grips loose ground and steep climbs but is slower; high pressure is faster on hard ground. Press <b style="color:#fff">L</b> for low range (strong pull, slow) and hold <b style="color:#fff">E</b> to winch yourself toward the next checkpoint when stuck. The Rock Trail map is steep enough to need them.</p>
       <p class="tips"><b style="color:#fff">Off-road:</b> the rally car, 4x4 pickup and monster truck keep their grip and speed on grass and dirt, so they suit the Rally Stage. The monster truck takes far less crash damage.</p>
@@ -265,6 +265,7 @@
       <option value="drift">Drift arena</option>
     </select>
     <select id="wxSel"><option value="dry">Weather: dry</option><option value="rain">Weather: rain</option><option value="mixed">Weather: changeable</option></select>
+    <select id="lapSel"><option value="0">Laps: default</option><option value="1">Laps: 1</option><option value="2">Laps: 2</option><option value="3">Laps: 3</option><option value="5">Laps: 5</option><option value="10">Laps: 10</option><option value="15">Laps: 15</option><option value="20">Laps: 20</option></select>
     <select id="botSel"><option value="0">AI cars: none</option><option value="1">AI cars: 1</option><option value="3">AI cars: 3</option><option value="5">AI cars: 5</option><option value="7">AI cars: 7</option></select>
     <div id="tyreSel"><button data-ty="soft" style="--c:#e10600">S</button><button data-ty="medium" style="--c:#ffd23f">M</button><button data-ty="hard" style="--c:#f4f4f4">H</button><button data-ty="wet" style="--c:#1f6fe0">W</button></div>
     <button id="startBtn" class="pri">Start race (Enter)</button>
@@ -314,6 +315,6 @@
   </div>
 </div>
 
-<script type="module" src="game.js?v=1794842107"></script>
+<script type="module" src="game.js?v=1794842549"></script>
 </body>
 </html>
