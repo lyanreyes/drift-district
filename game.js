@@ -1082,7 +1082,7 @@ const saveOpt = () => { try { localStorage.setItem('dd-opt', JSON.stringify(opt)
 let musicStep = 0;
 // calm background pad: slow soft chords with a sparse, quiet melody
 setInterval(() => {
-  if (!audio || !audio.ctx || muted || !opt.music || state.screen !== 'play') return;
+  if (!audio || !audio.ctx || muted || !opt.music || state.screen !== 'play' || state.mode.startsWith('touge')) return;
   const c = audio.ctx, t = c.currentTime + .05, st = musicStep++ % 32, root = [110, 87.3, 130.8, 98][(st >> 3) % 4], lv = opt.master * opt.musicVol;
   const note = (f, dur, vol, atk) => { const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(); o.type = 'sine'; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = 900;
     g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol * lv, t + atk); g.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(lp); lp.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + .05); };
@@ -1099,7 +1099,7 @@ function initAudio() {
     const mk = (type, gv) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; g.gain.value = gv; o.connect(g); g.connect(shaper); o.start(); return { o, g }; };
     const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     const nz = (type, f, q) => { const src = ctx.createBufferSource(); src.buffer = nb; src.loop = true; const bf = ctx.createBiquadFilter(); bf.type = type; bf.frequency.value = f; bf.Q.value = q; const g = ctx.createGain(); g.gain.value = 0; src.connect(bf); bf.connect(g); g.connect(master); src.start(); return { f: bf, g }; };
-    audio = { ctx, master, lp, eg, o1: mk('sawtooth', .5), o2: mk('sawtooth', .35), o3: mk('square', .1), sub: mk('triangle', .5), exh: nz('bandpass', 300, .8), wind: nz('highpass', 1800, .5), tyre: nz('bandpass', 2400, 6), rainN: nz('highpass', 5000, .3), rpm: 0 };
+    audio = { nb, ctx, master, lp, eg, o1: mk('sawtooth', .5), o2: mk('sawtooth', .35), o3: mk('square', .1), sub: mk('triangle', .5), exh: nz('bandpass', 300, .8), wind: nz('highpass', 1800, .5), tyre: nz('bandpass', 2400, 6), rainN: nz('highpass', 5000, .3), rpm: 0 };
     loadSamples();
   } catch (e) { console.warn('Audio could not start', e); audio = {}; }
 }
@@ -1142,6 +1142,20 @@ function updateAudio(speed, thr) {
   set(audio.tyre.f.frequency, 1700 + speed * 22); set(audio.tyre.g.gain, on * (me.drifting ? .08 : 0));
   set(audio.rainN.g.gain, muted ? 0 : state.wet ? .05 : 0);
 }
+// original Eurobeat-style track for the mountain pass: 150 BPM, four-on-the-floor kick, galloping bass, saw lead
+let euroStep = 0;
+const EURO_LEAD = [2, 0, 2.4, 2, 3, 0, 2.4, 2, 2, 2.4, 3, 3.6, 3, 0, 2.4, 0, 2.4, 0, 3, 2.4, 3.6, 0, 3, 2.4, 2, 2.4, 3, 2.4, 2, 0, 1.5, 0];
+setInterval(() => {
+  if (!audio || !audio.ctx || muted || !opt.music || state.screen !== 'play' || !state.mode.startsWith('touge')) return;
+  const c = audio.ctx, t = c.currentTime + .04, st = euroStep++ % 128, bar = (st >> 5) % 4, root = [110, 87.3, 98, 82.4][bar], lv = opt.master * opt.musicVol;
+  const tone = (f, dur, type, vol, cut) => { const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(); o.type = type; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = cut;
+    g.gain.setValueAtTime(vol * lv, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(lp); lp.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + .03); };
+  if (st % 4 === 0) { const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + .11); g.gain.setValueAtTime(.2 * lv, t); g.gain.exponentialRampToValueAtTime(.0001, t + .16); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .18); }
+  else tone(root * (st % 4 === 2 ? 2 : 1), .09, 'sawtooth', .07, 700);
+  if (st % 4 === 2) { const n = c.createBufferSource(), g = c.createGain(), hp = c.createBiquadFilter(); n.buffer = audio.nb; hp.type = 'highpass'; hp.frequency.value = 7000; g.gain.setValueAtTime(.05 * lv, t); g.gain.exponentialRampToValueAtTime(.0001, t + .05); n.connect(hp); hp.connect(g); g.connect(c.destination); n.start(t, Math.random()); n.stop(t + .06); }
+  const ld = EURO_LEAD[st % 32]; if (ld && (st >> 5) % 2 === 1 || ld && st % 2 === 0) tone(root * 2 * ld, .13, 'sawtooth', .035, 2600);
+  if (st % 16 === 0) for (const r of [2, 2.4, 3]) tone(root * r, .75, 'square', .014, 1500);
+}, 100);
 function beep() {
   if (!audio || !audio.ctx || muted) return;
   const c = audio.ctx, t = c.currentTime;
