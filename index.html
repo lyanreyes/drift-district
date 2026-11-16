@@ -11,7 +11,7 @@
   *{box-sizing:border-box}
   [hidden]{display:none!important}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:"Titillium Web","Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
-  canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;filter:saturate(1.12) contrast(1.04)}
+  canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;filter:saturate(1.34) contrast(1.08) brightness(1.03)}
   button,select,input{font:inherit;color:inherit}
   button{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.08);border-radius:8px;padding:10px 16px;font-weight:700}
   button:hover{background:rgba(255,255,255,.17)}
@@ -127,6 +127,25 @@
   #msg{top:28%;left:50%;transform:translateX(-50%);font-size:clamp(48px,12vw,120px);font-weight:900;font-style:italic;text-shadow:0 0 30px rgba(225,6,0,.9),0 4px 0 #000;white-space:nowrap}
   #toast{bottom:150px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;opacity:0;transition:opacity .3s;white-space:nowrap;font-weight:600}
   #toast.on{opacity:1}
+  #lights{top:16%;left:50%;transform:translateX(-50%);text-align:center}
+  #lights b{display:inline-block;background:rgba(0,0,0,.8);border-left:4px solid var(--ye);padding:4px 16px;font-size:20px;letter-spacing:2px;margin-bottom:12px}
+  #lights div{display:flex;gap:14px;justify-content:center;background:rgba(0,0,0,.7);padding:12px 18px;border-radius:14px}
+  #lights i{width:46px;height:46px;border-radius:50%;background:#2a0a0a;border:3px solid #111}
+  #lights i.on{background:#ff1a1a;box-shadow:0 0 22px #ff1a1a}
+  #offPanel{bottom:92px;left:50%;transform:translateX(-50%);width:min(380px,92vw);pointer-events:auto;padding:10px 14px}
+  @media (max-width:760px){#offPanel{bottom:auto;top:84px}}
+  #offPanel .oh{display:flex;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--dim)}
+  #offPanel .oh span{color:var(--ye)}
+  #offPanel .ob{display:flex;gap:14px;align-items:center;margin:4px 0 8px}
+  #offPanel .pn b{font-size:40px;line-height:1;display:block;font-variant-numeric:tabular-nums}
+  #offPanel .pn small{color:var(--dim);font-weight:700}
+  #offPanel .sl{flex:1}
+  #offPanel input[type=range]{width:100%;accent-color:var(--ye)}
+  #offPanel .marks{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.5px}
+  #offPanel .obt{display:flex;gap:8px}
+  #offPanel .obt button{flex:1;padding:8px 6px;font-size:13px}
+  #offPanel .obt button.on{background:var(--ye);color:#111;border-color:var(--ye)}
+  #offPanel .okeys{margin-top:6px;font-size:11px;color:var(--dim);text-align:center}
   #radio{top:76px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.82);border-left:4px solid var(--red);border-radius:4px;padding:6px 14px;font-weight:700;opacity:0;transition:opacity .25s;max-width:80vw;text-align:center}
   #radio.on{opacity:1}
   #results{top:50%;left:50%;transform:translate(-50%,-50%);min-width:280px;pointer-events:auto;text-align:center}
@@ -257,6 +276,14 @@
   <div id="board" class="box"></div>
   <div id="msg"></div>
   <div id="toast"></div>
+  <div id="lights" hidden><b>RACE START</b><div><i></i><i></i><i></i><i></i><i></i></div></div>
+  <div id="offPanel" class="box" hidden>
+    <div class="oh"><small>TIRES</small><span id="offState">BALANCED</span></div>
+    <div class="ob"><div class="pn"><b id="psiNum">30</b><small>psi</small></div>
+      <div class="sl"><input type="range" id="psiR" min="12" max="36" step="2" value="30"><div class="marks"><span>MUD</span><span>SAND</span><span>GRAVEL</span><span>ROAD</span></div></div></div>
+    <div class="obt"><button id="lowBtn">4H  HIGH RANGE</button><button id="winchBtn">WINCH (hold)</button></div>
+    <div class="okeys">[ ] pressure · L low range · E winch</div>
+  </div>
   <div id="radio"></div>
   <div id="results" class="box" hidden></div>
   <div id="settings" class="box" hidden><h2>Settings</h2>
@@ -281,6 +308,6 @@
   </div>
 </div>
 
-<script type="module" src="game.js?v=1794838841"></script>
+<script type="module" src="game.js?v=1794839363"></script>
 </body>
 </html>
