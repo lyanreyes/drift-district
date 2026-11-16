@@ -16,6 +16,8 @@ const CARS = [
   { snd: 'v8', id: 'vento', name: 'Vento GT', desc: 'Balanced supercar', color: '#e63946', max: 76, acc: 21, grip: 7.5, steer: 2.4, type: 'sport' },
   { snd: 'turbo', id: 'kaiju', name: 'Kaiju RS', desc: 'Born to drift', color: '#ffb703', max: 70, acc: 20, grip: 5.2, steer: 2.9, type: 'coupe' },
   { snd: 'v8', id: 'brute', name: 'Brute V8', desc: 'Muscle power', color: '#8338ec', max: 74, acc: 24, grip: 6.2, steer: 2.2, type: 'muscle' },
+  { snd: 'turbo', id: 'panda', name: 'Panda Coupe', desc: '80s touge hatch — light and agile', color: '#f4f4f4', max: 66, acc: 21, grip: 6, steer: 3.0, type: 'hatch' },
+  { snd: 'turbo', id: 'wedge', name: 'Wedge Rotary', desc: 'Low wedge coupe — strong uphill', color: '#ffd23f', max: 72, acc: 23, grip: 6.4, steer: 2.7, type: 'wedge' },
   { snd: 'turbo', off: 1, id: 'rally', name: 'Gravel RS', desc: 'Rally car — loves dirt', color: '#2a9d8f', max: 68, acc: 23, grip: 6.5, steer: 2.8, type: 'rally' },
   { snd: 'v8', off: 1, id: 'pickup', name: 'Dune 4x4', desc: '4x4 pickup — goes anywhere', color: '#e76f51', max: 58, acc: 19, grip: 6, steer: 2.3, type: 'pickup' },
   { snd: 'v8', off: 1, big: 1, id: 'monster', name: 'Crusher', desc: 'Monster truck — hard to wreck', color: '#7cb518', max: 50, acc: 20, grip: 5, steer: 2.2, type: 'monster' },
@@ -49,6 +51,8 @@ const MODES = {
   rally: { name: 'Forest Stage', laps: 3 },
   dunes: { name: 'Desert Dunes', laps: 3 },
   monster: { name: 'Monster Arena', laps: 3 },
+  touge: { name: 'Mountain Pass — Downhill', laps: 1 },
+  tougeUp: { name: 'Mountain Pass — Uphill', laps: 1 },
   trail: { name: 'Rock Trail', laps: 2 },
   gp: { name: 'Austria Ring', laps: 10 },
   gp2: { name: 'São Paulo Circuit', laps: 10 },
@@ -80,6 +84,7 @@ const CATS = {
   monster: { name: 'Monster Truck', maps: ['monster', 'dunes', 'trail'], cars: ['monster'] },
   street: { name: 'Street', maps: ['city'], cars: ['vento', 'kaiju', 'brute'] },
   drift: { name: 'Drift', maps: ['drift'], cars: ['kaiju', 'vento', 'brute'] },
+  touge: { name: 'Touge', maps: ['touge', 'tougeUp'], cars: ['panda', 'wedge', 'kaiju'] },
 };
 const TYRES = {
   soft: { name: 'Soft', dry: 1.06, wet: .55, wear: 2, col: 0xe10600 },
@@ -295,8 +300,8 @@ function buildCar(spec, color, color2 = color) {
     }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) wheel(sx * (W + (big ? .48 : .02)), sz * 1.75, R, big ? .95 : .44, true);
   } else {
-    const L = t === 'muscle' ? 4.8 : t === 'rally' ? 4.1 : 4.4, hL = L / 2, W = .95, low = t === 'sport';
-    const roofY = low ? 1.1 : t === 'rally' ? 1.38 : 1.26, cf = low ? .55 : t === 'muscle' ? .25 : .6, cr = low ? -1.2 : t === 'muscle' ? -1.4 : -1.25, belt = low ? .78 : .84, gh = (roofY - belt) / 2;
+    const L = t === 'muscle' ? 4.8 : t === 'rally' ? 4.1 : t === 'hatch' ? 4.2 : 4.4, hL = L / 2, W = .95, low = t === 'sport' || t === 'wedge';
+    const roofY = low ? 1.1 : t === 'rally' ? 1.38 : 1.26, cf = low ? .55 : t === 'muscle' ? .25 : .6, cr = low ? -1.2 : t === 'muscle' ? -1.4 : t === 'hatch' ? -1.6 : -1.25, belt = low ? .78 : .84, gh = (roofY - belt) / 2;
     g.add(loft([[hL, W * .72, .15, .5], [hL - .3, W * .96, .23, .52], [hL * .5, W, .26, .55], [0, W, low ? .25 : .29, .56], [-hL * .5, W, .29, .57], [-hL + .3, W * .97, .26, .58], [-hL, W * .78, .17, .58]], paint, 18, 4.5));
     g.add(loft([[cf, W * .74, .04, belt - .02], [cf - .55, W * .8, gh, belt + gh], [cr + .5, W * .78, gh, belt + gh], [cr, W * .7, .04, belt]], glass, 16, 3.5));
     g.add(loft([[cf - .6, W * .66, .025, roofY], [cr + .55, W * .64, .025, roofY]], trim, 12, 4));
@@ -305,6 +310,12 @@ function buildCar(spec, color, color2 = color) {
     if (low) { box(W * 2, .05, .36, trim, 0, 1.02, -hL + .22); for (const sx of [-1, 1]) box(.07, .22, .26, dark, sx * .7, .9, -hL + .22); box(W * 2 + .1, .05, .3, dark, 0, .28, hL - .05); }
     if (t === 'coupe') { box(W * 2 + .1, .06, .42, dark, 0, 1.36, -hL + .2); for (const sx of [-1, 1]) box(.07, .52, .26, dark, sx * .78, 1.1, -hL + .2); }
     if (t === 'muscle') { box(.7, .13, 1.1, dark, 0, .87, 1.15); box(W * 1.9, .05, .24, paint, 0, .9, -hL + .15); }
+    if (t === 'hatch' || t === 'wedge') { // pop-up headlights and black bumpers
+      for (const sx of [-1, 1]) { box(.42, .13, .3, dark, sx * .56, .8, hL - .5); box(.36, .1, .04, head, sx * .56, .81, hL - .34); }
+      box(W * 2 + .06, .16, .14, dark, 0, .44, hL - .02); box(W * 2 + .06, .16, .14, dark, 0, .5, -hL + .02);
+    }
+    if (t === 'hatch') { box(W * 2 + .05, .2, L * .9, dark, 0, .42, 0); box(W * 1.7, .05, .2, dark, 0, 1.0, -hL + .12); }
+    if (t === 'wedge') { box(W * 2, .05, .34, paint, 0, 1.0, -hL + .2); for (const sx of [-1, 1]) box(.07, .2, .24, dark, sx * .7, .89, -hL + .2); }
     if (t === 'rally') {
       box(W * 2 + .1, .06, .5, trim, 0, 1.5, -hL + .25); for (const sx of [-1, 1]) box(.08, .6, .3, dark, sx * .8, 1.2, -hL + .25);
       box(.5, .12, .5, dark, 0, roofY + .07, .1); for (const k of [-1.5, -.5, .5, 1.5]) box(.24, .24, .1, head, k * .3, .92, hL - .25);
@@ -441,18 +452,20 @@ function ribbon(sp, a, b, y, colorFn, rough = .92) {
   for (let i = 0; i < N; i++) {
     const c = colorFn(i); if (!c) continue;
     const A = ribEdge(sp, i, a), B = ribEdge(sp, i, b), C = ribEdge(sp, i + 1, a), D = ribEdge(sp, i + 1, b);
-    pos.push(A[0], y, A[1], C[0], y, C[1], B[0], y, B[1], B[0], y, B[1], C[0], y, C[1], D[0], y, D[1]);
+    const y0 = typeof y === 'function' ? y(i) : y, y1 = typeof y === 'function' ? y((i + 1) % N) : y;
+    pos.push(A[0], y0, A[1], C[0], y1, C[1], B[0], y0, B[1], B[0], y0, B[1], C[0], y1, C[1], D[0], y1, D[1]);
     uvs.push(a / 9, i * seg, a / 9, (i + 1) * seg, b / 9, i * seg, b / 9, i * seg, a / 9, (i + 1) * seg, b / 9, (i + 1) * seg);
     for (let k = 0; k < 6; k++) col.push(c.r, c.g, c.b);
   }
   return ribMesh(pos, col, uvs, rough);
 }
-function wall(sp, o, y0, y1, colorFn) {
+function wall(sp, o, y0, y1, colorFn, yf = () => 0) {
   const N = sp.length, pos = [], col = [], uvs = [], of = typeof o === 'function' ? o : () => o;
   for (let i = 0; i < N; i++) {
     const c = colorFn(i); if (!c) continue;
     const A = ribEdge(sp, i, of(i)), C = ribEdge(sp, i + 1, of((i + 1) % N));
-    pos.push(A[0], y0, A[1], C[0], y0, C[1], A[0], y1, A[1], A[0], y1, A[1], C[0], y0, C[1], C[0], y1, C[1]);
+    const ya = yf(i), yc = yf((i + 1) % N);
+    pos.push(A[0], y0 + ya, A[1], C[0], y0 + yc, C[1], A[0], y1 + ya, A[1], A[0], y1 + ya, A[1], C[0], y0 + yc, C[1], C[0], y1 + yc, C[1]);
     uvs.push(0, 0, .3, 0, 0, .1, 0, .1, .3, 0, .3, .1);
     for (let k = 0; k < 6; k++) col.push(c.r, c.g, c.b);
   }
@@ -490,6 +503,7 @@ const SKIES = {
   trail: { top: 0x5f86b8, hor: 0xdfe6ee, sunCol: 0xfff6e6, sunDir: [-.4, .7, .5], cloud: 1, fog: [300, 1500], ground: 'sand', tint: 0x8f9299, hemi: [0xe6eefc, 0x5a5a60, .8], sunI: 2.4 },
   britain: { top: 0x5d83b4, hor: 0xdde5ec, sunCol: 0xfff6e6, sunDir: [.3, .75, .5], cloud: 1, fog: [420, 1800], ground: 'grass', tint: 0xe4f2c8, hemi: [0xe6eefc, 0x4a6a3a, .75], sunI: 2.3 },
   bahrain: { top: 0x24306a, hor: 0xf0a868, sunCol: 0xffd9a0, sunDir: [-.6, .35, .3], cloud: .35, fog: [400, 1800], ground: 'sand', tint: 0xf2dcae, hemi: [0xffe2c0, 0x8a6a3a, .85], sunI: 2.5 },
+  touge: { top: 0x040612, hor: 0x18223f, sunCol: 0xcfdcff, sunDir: [.3, .6, -.6], cloud: .35, fog: [180, 1100], ground: 'grass', tint: 0x6f8f6a, hemi: [0x8fa6d8, 0x1a2030, 1.0], sunI: 1.2 },
   drift: { top: 0x38468a, hor: 0xf5a56c, sunCol: 0xffb070, sunDir: [-.7, .25, .4], cloud: .7, fog: [250, 1400], ground: 'asphalt', tint: 0x55555e, hemi: [0xffc9a0, 0x332233, .6], sunI: 2.4 },
 };
 function trackWorld(kind) {
@@ -786,6 +800,65 @@ function terrainWorld(kind) {
   return { group: g, B, cps, colliders: [], showCps: arena, height, loose: true, contain, onRoad: arena ? () => true : (x, z) => distTo(x, z) < width / 2 + 2, spawn, drawMap };
 }
 
+// mountain pass: a road carved into a hillside, run point-to-point downhill or uphill
+const TOUGE_PTS = [[-250, 290], [-120, 300], [60, 285], [200, 270], [265, 235], [240, 195], [120, 180], [-60, 175], [-200, 160], [-262, 125], [-235, 88], [-100, 75], [80, 70], [210, 55], [268, 20], [240, -18], [110, -30], [-70, -38], [-205, -55], [-262, -90], [-232, -126], [-90, -138], [90, -145], [215, -160], [268, -195], [238, -232], [100, -245], [-80, -255], [-240, -270]];
+function tougeWorld(kind) {
+  const up = kind === 'tougeUp', width = 11, B = 345, R = rng(31), g = baseWorld(SKIES.touge), dummy = new THREE.Object3D();
+  const curve = new THREE.CatmullRomCurve3(TOUGE_PTS.map(p => new THREE.Vector3(p[0], 0, p[1])), false, 'centripetal');
+  const N = Math.round(curve.getLength() / 3), sp = curve.getSpacedPoints(N - 1); if (up) sp.reverse();
+  const plane = (x, z) => 4 + (clamp(z, -330, 330) + 330) * .11 + 1.4 * Math.sin(x * .03) * Math.sin(z * .045);
+  const hs = sp.map(p => plane(p.x, p.z));
+  const tan = i => { const a = sp[Math.max(0, i - 1)], b = sp[Math.min(N - 1, i + 1)], l = Math.hypot(b.x - a.x, b.z - a.z); return [(b.x - a.x) / l, (b.z - a.z) / l]; };
+  const near = (x, z) => { let m = 1e12, bi = 0; for (let i = 0; i < N; i++) { const p = sp[i], d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < m) { m = d; bi = i; } } const [tx, tz] = tan(bi), dx = x - sp[bi].x, dz = z - sp[bi].z; return { i: bi, d: Math.sqrt(m), tx, tz, u: clamp((dx * tx + dz * tz) / 3, -.5, .5), off: dx * tz - dz * tx }; };
+  const roadH = n => hs[n.i] + n.u * (hs[Math.min(N - 1, n.i + 1)] - hs[Math.max(0, n.i - 1)]) / 2;
+  const height = (x, z) => { const n = near(x, z), f = clamp((n.d - (width / 2 + 1.6)) / 9, 0, 1), t = f * f * (3 - 2 * f); return roadH(n) * (1 - t) + plane(x, z) * t + (n.d < width / 2 + 1.2 ? .14 : 0); };
+  // hillside
+  const S = 780, seg = 156, geo = new THREE.PlaneGeometry(S, S, seg, seg).rotateX(-Math.PI / 2), pa = geo.attributes.position, uv = geo.attributes.uv, col = new Float32Array(pa.count * 3);
+  for (let i = 0; i < pa.count; i++) {
+    const x = pa.getX(i), z = pa.getZ(i), n = near(x, z), f = clamp((n.d - (width / 2 + 1.6)) / 9, 0, 1), t = f * f * (3 - 2 * f);
+    pa.setY(i, roadH(n) * (1 - t) + plane(x, z) * t - (n.d < width / 2 + 1.2 ? .05 : 0));
+    const k = n.d < width / 2 + 6 ? .55 : .8 + .2 * Math.sin(x * .07) * Math.sin(z * .09); col[i * 3] = k * (n.d < width / 2 + 6 ? 2.2 : 1); col[i * 3 + 1] = k; col[i * 3 + 2] = k * (n.d < width / 2 + 6 ? 1.6 : 1);
+    uv.setXY(i, uv.getX(i) * S / 22, uv.getY(i) * S / 22);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
+  const ter = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: TEX.grass, vertexColors: true, roughness: 1, metalness: 0 })); ter.receiveShadow = true; g.add(ter);
+  // road, markings, guardrails
+  const ok = i => i > 0 && i < N - 2, yR = o => i => hs[i] + o, roadC = new THREE.Color(0x4a4d55), white = new THREE.Color(0xf4f4f4), yel = new THREE.Color(0xffd23f), rail = new THREE.Color(0xc9ced6), redC = new THREE.Color(0xd62828);
+  g.add(ribbon(sp, -width / 2, width / 2, yR(.09), i => ok(i) ? roadC : null));
+  g.add(ribbon(sp, -.14, .14, yR(.13), i => ok(i) && i % 4 < 2 ? yel : null));
+  g.add(ribbon(sp, width / 2 - .5, width / 2 - .28, yR(.13), i => ok(i) ? white : null)); g.add(ribbon(sp, -width / 2 + .28, -width / 2 + .5, yR(.13), i => ok(i) ? white : null));
+  for (const o of [width / 2 + 1.3, -(width / 2 + 1.3)]) { g.add(wall(sp, o, .3, .9, i => ok(i) ? (i % 6 === 0 ? redC : rail) : null, i => hs[i])); }
+  // lamps, pines, start and finish banners
+  const li = []; for (let i = 8; i < N - 4; i += 13) li.push(i);
+  const lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(.7, .3, 1.6), new THREE.MeshBasicMaterial({ color: 0xffe9b0 }), li.length), pole = new THREE.InstancedMesh(new THREE.BoxGeometry(.22, 7, .22), new THREE.MeshLambertMaterial({ color: 0x59606c }), li.length);
+  li.forEach((idx, k) => { const sd = k % 2 ? 1 : -1, [tx, tz] = tan(idx), x = sp[idx].x + tz * sd * (width / 2 + 2.3), z = sp[idx].z - tx * sd * (width / 2 + 2.3); dummy.rotation.set(0, Math.atan2(tx, tz), 0); dummy.position.set(x - tz * sd * 1.2, hs[idx] + 7, z + tx * sd * 1.2); dummy.updateMatrix(); lamp.setMatrixAt(k, dummy.matrix); dummy.position.set(x, hs[idx] + 3.5, z); dummy.updateMatrix(); pole.setMatrixAt(k, dummy.matrix); });
+  dummy.rotation.set(0, 0, 0); g.add(lamp, pole);
+  const TN = 460, trees = new THREE.InstancedMesh(PINE, new THREE.MeshLambertMaterial({ color: 0x2c7a3e, vertexColors: true, side: THREE.DoubleSide }), TN); let n = 0, guard = 0;
+  while (n < TN && guard++ < 6000) { const x = (R() * 2 - 1) * 345, z = (R() * 2 - 1) * 345, nr = near(x, z); if (nr.d < width / 2 + 7) continue; const sc = .7 + R() * .9; dummy.position.set(x, height(x, z) + 9.3 * sc, z); dummy.scale.set(sc, sc, sc); dummy.updateMatrix(); trees.setMatrixAt(n++, dummy.matrix); }
+  trees.count = n; dummy.scale.set(1, 1, 1); trees.castShadow = true; g.add(trees);
+  const gm = new THREE.MeshLambertMaterial({ color: 0x222831 });
+  for (const [idx, txt, bg] of [[11, 'START', '#1f9d3a'], [N - 6, 'FINISH', '#e10600']]) {
+    const [tx, tz] = tan(idx), bg2 = new THREE.Group(); bg2.position.set(sp[idx].x, hs[idx], sp[idx].z); bg2.rotation.y = Math.atan2(tx, tz);
+    for (const sd of [-1, 1]) { const po = new THREE.Mesh(new THREE.BoxGeometry(.5, 7.5, .5), gm); po.position.set(sd * (width / 2 + 1.6), 3.75, 0); bg2.add(po); }
+    const bb = new THREE.Mesh(new THREE.PlaneGeometry(width + 3.6, 1.7), new THREE.MeshBasicMaterial({ map: textTex(txt, bg, '#ffffff'), side: THREE.DoubleSide })); bb.position.y = 7.2; bb.rotation.y = Math.PI; bg2.add(bb); g.add(bg2);
+  }
+  const head = new THREE.SpotLight(0xfff2d0, 900, 95, .5, .55, 1.5); g.add(head, head.target);
+  const cps = []; for (let k = 1; k <= 24; k++) { const p = sp[Math.round(11 + k * (N - 17) / 24)]; cps.push({ x: p.x, z: p.z, r: 16 }); }
+  return {
+    group: g, B, cps, colliders: [], showCps: false, height, head, onRoad: () => true,
+    contain: m => {
+      const nr = near(m.x, m.z), lim = width / 2 + .45;
+      if (nr.i <= 1 || nr.i >= N - 2) { const q = sp[clamp(nr.i, 3, N - 4)]; m.x = q.x; m.z = q.z; m.vx *= .3; m.vz *= .3; return 0; }
+      if (Math.abs(nr.off) <= lim) return 0;
+      const sg = Math.sign(nr.off), sh = sg * lim - nr.off, vl = m.vx * nr.tz - m.vz * nr.tx; m.x += sh * nr.tz; m.z -= sh * nr.tx;
+      if (vl * sg > 0) { m.vx -= 1.3 * vl * nr.tz; m.vz += 1.3 * vl * nr.tx; m.vx *= .93; m.vz *= .93; return Math.abs(vl); }
+      return 0;
+    },
+    spawn(i) { const idx = Math.max(2, 9 - Math.floor(i / 2) * 3), q = sp[idx], [tx, tz] = tan(idx), o = (i % 2 ? -1 : 1) * 2.6; return { x: q.x + tz * o, z: q.z - tx * o, h: Math.atan2(tx, tz) }; },
+    drawMap(c, M) { c.strokeStyle = '#8b93b8'; c.lineWidth = 4; c.lineJoin = 'round'; c.beginPath(); sp.forEach((q, i) => { const [x, y] = M(q.x, q.z); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke(); const [fx, fy] = M(sp[N - 6].x, sp[N - 6].z); c.fillStyle = '#e10600'; c.fillRect(fx - 4, fy - 4, 8, 8); },
+  };
+}
+
 function cityWorld() {
   const P = 80, HALF = 4, B = HALF * P + 14, R = rng(7);
   const g = baseWorld({ top: 0x060716, hor: 0x2b1b58, sunCol: 0xb9a8ff, sunDir: [.3, .7, -.5], cloud: .3, fog: [160, 950], ground: 'asphalt', tint: 0x3a3b44, hemi: [0x8899ff, 0x331a44, .9], sunI: 1.0 });
@@ -846,7 +919,7 @@ function cityWorld() {
 /* ───────────────────────── state ───────────────────────── */
 const state = { screen: 'menu', mode: 'city', cat: 'f1', wet: false, wx: 'dry' };
 let world = null;
-const me = { psi: 30, lowR: false, stuckT: 0, y: 0, vy: 0, air: false, airT: 0, pitch: 0, cat: 'f1', pick: { f1: 'sabre', rally: 'rally', monster: 'monster', street: 'vento', drift: 'kaiju' }, penalty: 0, strikes: 0, offT: 0, offFlag: false, pitSpeed: false, penCd: 0, tyreWarn: false, compound: 'medium', nextComp: 'medium', dmg: 0, tyre: 1, pitT: 0, pitDone: false, pitMsg: '', shake: 0, crashCd: 0, wreckT: 0, name: 'Driver', spec: CARS[0], color: '#e63946', color2: '#e63946', last: null, mesh: null, x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, nitro: 1, cp: 0, lap: 0, passed: 0, prog: 0, score: 0, combo: 0, comboT: 0, lapStart: 0, best: null, drifting: false, boosting: false, rank: 1 };
+const me = { psi: 30, lowR: false, stuckT: 0, y: 0, vy: 0, air: false, airT: 0, pitch: 0, cat: 'f1', pick: { f1: 'sabre', rally: 'rally', monster: 'monster', street: 'vento', drift: 'kaiju', touge: 'panda' }, penalty: 0, strikes: 0, offT: 0, offFlag: false, pitSpeed: false, penCd: 0, tyreWarn: false, compound: 'medium', nextComp: 'medium', dmg: 0, tyre: 1, pitT: 0, pitDone: false, pitMsg: '', shake: 0, crashCd: 0, wreckT: 0, name: 'Driver', spec: CARS[0], color: '#e63946', color2: '#e63946', last: null, mesh: null, x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, nitro: 1, cp: 0, lap: 0, passed: 0, prog: 0, score: 0, combo: 0, comboT: 0, lapStart: 0, best: null, drifting: false, boosting: false, rank: 1 };
 const race = { phase: 'free', t0: 0, results: [] };
 const remotes = new Map();
 let menuCar = null; const previewPos = { x: 0, z: 0 };
@@ -1277,6 +1350,7 @@ function stepCar(dt, now) {
   me.pitch += (tp - me.pitch) * Math.min(1, dt * 10);
   const bob = s.off && !me.air ? Math.sin(now * .021) * Math.min(.05, speed * .0022) * (s.big ? 2.2 : 1) : 0;
   me.mesh.position.set(me.x, me.y + bob, me.z); me.mesh.rotation.y = me.h; me.mesh.rotation.x = me.pitch;
+  if (world.head) { const sn2 = Math.sin(me.h), cs2 = Math.cos(me.h); world.head.position.set(me.x + sn2 * 1.4, me.y + 1.1, me.z + cs2 * 1.4); world.head.target.position.set(me.x + sn2 * 32, me.y - 1.5, me.z + cs2 * 32); }
   spinWheels(me.mesh, vf, me.steer, dt); if (cock && cock.car) spinWheels(cock.car, vf, me.steer, dt); me.mesh.rotation.z = clamp(vl * .012, -.12, .12) * (me.spec.type === 'formula' ? .3 : 1);
   if (me.mesh.userData.fw) for (const w of me.mesh.userData.fw) w.rotation.y = me.steer * .32;
   if (world.showCps) { cpMarker.visible = true; cpMarker.position.set(nc.x, world.height ? world.height(nc.x, nc.z) : 0, nc.z); } else cpMarker.visible = false;
@@ -1533,7 +1607,7 @@ function fitCar() {
 }
 function setMode(mode) {
   if (world) { scene.remove(world.group); world.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
-  state.mode = mode; world = mode === 'city' ? cityWorld() : (mode === 'monster' || mode === 'dunes' || mode === 'rally' || mode === 'trail') ? terrainWorld(mode) : trackWorld(mode); scene.add(world.group);
+  state.mode = mode; world = mode.startsWith('touge') ? tougeWorld(mode) : mode === 'city' ? cityWorld() : (mode === 'monster' || mode === 'dunes' || mode === 'rally' || mode === 'trail') ? terrainWorld(mode) : trackWorld(mode); scene.add(world.group);
   const c = mapBg.getContext('2d'); c.clearRect(0, 0, 170, 170); world.drawMap(c, M);
   applyWeather(); if (state.screen === 'play') fitCar();
   clearSkids(); race.phase = 'free'; race.results = []; race.msgUntil = 0; $('results').hidden = true;
@@ -1599,6 +1673,7 @@ let menuMode = 'gp';
 function mapOutline(m) {
   if (m === 'city') return [[-160, -240], [0, -240], [160, -240], [160, -80], [0, -80], [0, 80], [120, 80], [240, 80], [240, 240], [0, 240], [-240, 240], [-240, 0], [-160, 0], [-160, -120]];
   if (m === 'monster') return Array.from({ length: 48 }, (_, k) => [Math.cos(k / 48 * TAU) * 122, Math.sin(k / 48 * TAU) * 82]);
+  if (m.startsWith('touge')) { const o = new THREE.CatmullRomCurve3(TOUGE_PTS.map(q => new THREE.Vector3(q[0], 0, q[1])), false, 'centripetal').getPoints(260).map(v => [v.x, v.z]); return m === 'tougeUp' ? o.reverse() : o; }
   const pts = m === 'dunes' ? DUNE_PTS : m === 'trail' ? TRAIL_PTS : TRACKS[m].pts;
   return new THREE.CatmullRomCurve3(pts.map(q => new THREE.Vector3(q[0], 0, q[1])), true, 'centripetal').getPoints(240).map(v => [v.x, v.z]);
 }
@@ -1607,7 +1682,7 @@ function drawMini(m) {
   const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs), sc = Math.min((c.width - 36) / (x1 - x0), (c.height - 36) / (z1 - z0));
   const P = q => [c.width / 2 + (q[0] - (x0 + x1) / 2) * sc, c.height / 2 + (q[1] - (z0 + z1) / 2) * sc];
   x.clearRect(0, 0, c.width, c.height); x.lineJoin = x.lineCap = 'round';
-  for (const [w, col] of [[9, '#3a3d4d'], [4, '#ffffff']]) { x.lineWidth = w; x.strokeStyle = col; x.beginPath(); o.forEach((q, i) => { const [a, b] = P(q); i ? x.lineTo(a, b) : x.moveTo(a, b); }); x.closePath(); x.stroke(); }
+  for (const [w, col] of [[9, '#3a3d4d'], [4, '#ffffff']]) { x.lineWidth = w; x.strokeStyle = col; x.beginPath(); o.forEach((q, i) => { const [a, b] = P(q); i ? x.lineTo(a, b) : x.moveTo(a, b); }); if (!m.startsWith('touge')) x.closePath(); x.stroke(); }
   const [sx, sy] = P(o[0]); x.fillStyle = '#e10600'; x.beginPath(); x.arc(sx, sy, 6, 0, TAU); x.fill();
   $('mapName').textContent = MODES[m].name; $('mapInfo').textContent = MODES[m].laps ? MODES[m].laps + ' laps · red dot = start' : '90 second drift battle';
 }
